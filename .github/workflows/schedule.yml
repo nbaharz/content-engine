@@ -1,0 +1,41 @@
+name: Grupanya Instagram Otomasyon
+
+on:
+  schedule:
+    # Hafta ici (Pzt-Cuma) gunde 3 kere - Turkiye saati (UTC+3)
+    # 09:00 TR = 06:00 UTC
+    - cron: '0 6 * * 1-5'
+    # 11:20 TR = 08:20 UTC
+    - cron: '20 8 * * 1-5'
+    # 18:00 TR = 15:00 UTC
+    - cron: '0 15 * * 1-5'
+
+  # Manuel tetikleme (test icin)
+  workflow_dispatch:
+
+jobs:
+  post-campaign:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install system fonts
+        run: sudo apt-get install -y fonts-dejavu
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run scheduler
+        env:
+          FAL_KEY: ${{ secrets.FAL_KEY }}
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          INSTAGRAM_ACCOUNT_ID: ${{ secrets.INSTAGRAM_ACCOUNT_ID }}
+        run: python scheduler.py
