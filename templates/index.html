@@ -43,8 +43,13 @@
                     <option value="{{ campaign.id }}"
                             data-title="{{ campaign.title }}"
                             data-category="{{ campaign.category }}"
-                            data-discount="{{ campaign.discount }}">
-                        {{ campaign.title }} - {{ campaign.discount }} indirim
+                            data-discount="{{ campaign.discount }}"
+                            data-url="{{ campaign.url }}">
+                        {% if campaign.title %}
+                            {{ campaign.title }} - {{ campaign.discount }} indirim
+                        {% else %}
+                            {{ campaign.url | truncate(60) }}
+                        {% endif %}
                     </option>
                     {% endfor %}
                 </select>

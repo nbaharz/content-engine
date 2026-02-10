@@ -20,18 +20,21 @@ app = Flask(__name__)
 # workflow endpoint
 WORKFLOW_ENDPOINT = "workflows/baharyavuz/grupanya-content-engine"
 
-CAMPAIGNS = [
-    {"id": 1, "title": "Oley Manav İndirimi", "category": "fresh fruits and vegetables market", "discount": "150 TL"},
-    {"id": 2, "title": "Kız Kulesi Kahvaltı Fırsatı", "category": "Istanbul Bosphorus breakfast", "discount": "%20"},
-    {"id": 3, "title": "Sanda Spa Masaj Fırsatı", "category": "luxury spa massage", "discount": "%30"},
-    {"id": 4, "title": "Meloni Tur Sevgililer Günü Özel Kapadokya Turu", "category": "romantic couple watching hot air balloons at sunrise in Cappadocia Turkey, fairy chimneys, golden hour, Valentine's Day atmosphere", "discount": "4.000 TL"},
-    {
-        "id": 5, 
-        "title": "Dedeman Kartepe Kocaeli’de Yarım Pansiyon Konaklama", 
-        "category": "winter resort, ski holiday, luxury stay", 
-        "discount": "2.750 TL'den başlayan fiyatlarla"
-    }
-]
+CAMPAIGNS_PATH = os.path.join(os.path.dirname(__file__), "campaigns.json")
+
+
+def load_campaigns():
+    """campaigns.json'dan kampanya listesini yukle."""
+    if os.path.exists(CAMPAIGNS_PATH):
+        with open(CAMPAIGNS_PATH, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return []
+
+
+def save_campaigns(campaigns):
+    """Kampanya listesini campaigns.json'a kaydet."""
+    with open(CAMPAIGNS_PATH, "w", encoding="utf-8") as f:
+        json.dump(campaigns, f, ensure_ascii=False, indent=4)
 
 def scrape_campaign_page(url: str) -> str:
     """Kampanya sayfasını scrape edip metin içeriğini döndür"""
@@ -166,7 +169,7 @@ def generate_campaign_content(campaign):
 @app.route('/')
 def index():
     """Ana sayfa"""
-    return render_template('index.html', campaigns=CAMPAIGNS)
+    return render_template('index.html', campaigns=load_campaigns())
 
 @app.route('/add-campaign', methods=['POST'])
 def add_campaign():
@@ -182,15 +185,18 @@ def add_campaign():
         # AI ile kampanya bilgilerini çıkar
         info = extract_campaign_info(page_content)
 
-        # Yeni kampanyayı listeye ekle
-        new_id = max((c["id"] for c in CAMPAIGNS), default=0) + 1
+        # Yeni kampanyayı listeye ekle ve dosyaya kaydet
+        campaigns = load_campaigns()
+        new_id = max((c["id"] for c in campaigns), default=0) + 1
         campaign = {
             "id": new_id,
+            "url": url,
             "title": info["title"],
             "category": info["category"],
             "discount": info["discount"],
         }
-        CAMPAIGNS.append(campaign)
+        campaigns.append(campaign)
+        save_campaigns(campaigns)
 
         return jsonify({
             "success": True,
@@ -211,7 +217,8 @@ def update_campaign():
     try:
         data = request.json
         campaign_id = int(data.get('campaign_id'))
-        campaign = next((c for c in CAMPAIGNS if c["id"] == campaign_id), None)
+        campaigns = load_campaigns()
+        campaign = next((c for c in campaigns if c["id"] == campaign_id), None)
 
         if not campaign:
             return jsonify({"error": "Kampanya bulunamadı"}), 404
@@ -219,6 +226,7 @@ def update_campaign():
         campaign["title"] = data.get("title", campaign["title"])
         campaign["category"] = data.get("category", campaign["category"])
         campaign["discount"] = data.get("discount", campaign["discount"])
+        save_campaigns(campaigns)
 
         return jsonify({"success": True, "campaign": campaign})
 
@@ -236,7 +244,7 @@ def generate():
 
         campaign_id = int(request.json.get('campaign_id'))
         poster_mode = request.json.get('poster_mode', False)
-        campaign = next((c for c in CAMPAIGNS if c["id"] == campaign_id), None)
+        campaign = next((c for c in load_campaigns() if c["id"] == campaign_id), None)
 
         if not campaign:
             return jsonify({"error": "Kampanya bulunamadı"}), 404
@@ -378,7 +386,7 @@ def create_posters():
         if len(files) > 4:
             return jsonify({"error": "En fazla 4 gorsel yuklenebilir"}), 400
 
-        campaign = next((c for c in CAMPAIGNS if c["id"] == campaign_id), None)
+        campaign = next((c for c in load_campaigns() if c["id"] == campaign_id), None)
         if not campaign:
             return jsonify({"error": "Kampanya bulunamadi"}), 404
 
@@ -445,7 +453,7 @@ def adjust_poster():
         if not raw_base64:
             return jsonify({"error": "raw_image_base64 gerekli"}), 400
 
-        campaign = next((c for c in CAMPAIGNS if c["id"] == campaign_id), None)
+        campaign = next((c for c in load_campaigns() if c["id"] == campaign_id), None)
         if not campaign:
             return jsonify({"error": "Kampanya bulunamadi"}), 404
 
@@ -497,7 +505,7 @@ def adjust_poster():
 def download(campaign_id):
     """İçerikleri indir"""
     try:
-        campaign = next((c for c in CAMPAIGNS if c["id"] == campaign_id), None)
+        campaign = next((c for c in load_campaigns() if c["id"] == campaign_id), None)
         if not campaign:
             return "Kampanya bulunamadı", 404
 

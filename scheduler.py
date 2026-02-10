@@ -37,8 +37,8 @@ TZ_TR = timezone(timedelta(hours=3))
 SCHEDULE_HOURS = [(9, 0), (11, 20), (18, 0)]
 
 
-def load_campaign_urls():
-    """Kampanya URL'lerini yukle. Oncelik: lokal dosya > Gist > env var."""
+def load_campaigns_data():
+    """Kampanya verilerini yukle. Oncelik: lokal dosya > Gist > env var."""
     # 1) Lokal dosya (gelistirme ortami)
     campaigns_path = os.path.join(os.path.dirname(__file__), "campaigns.json")
     if os.path.exists(campaigns_path):
@@ -57,6 +57,16 @@ def load_campaign_urls():
     raise FileNotFoundError(
         "campaigns.json bulunamadi, CAMPAIGNS_GIST_URL ve CAMPAIGNS_JSON env var tanimli degil."
     )
+
+
+def load_campaign_urls():
+    """Kampanya verilerinden URL listesini cikar."""
+    data = load_campaigns_data()
+    # Yeni format: obje listesi ({"id": ..., "url": ..., ...})
+    if data and isinstance(data[0], dict):
+        return [c["url"] for c in data if c.get("url")]
+    # Eski format: duz URL listesi (geriye uyumluluk)
+    return data
 
 
 def pick_url(urls):
