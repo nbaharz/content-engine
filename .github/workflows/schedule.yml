@@ -38,4 +38,5 @@ jobs:
           FAL_KEY: ${{ secrets.FAL_KEY }}
           INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
           INSTAGRAM_ACCOUNT_ID: ${{ secrets.INSTAGRAM_ACCOUNT_ID }}
+          CAMPAIGNS_GIST_URL: ${{ secrets.CAMPAIGNS_GIST_URL }}
         run: python scheduler.py

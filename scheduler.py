@@ -38,10 +38,25 @@ SCHEDULE_HOURS = [(9, 0), (11, 20), (18, 0)]
 
 
 def load_campaign_urls():
-    """campaigns.json'dan URL listesini yukle."""
+    """Kampanya URL'lerini yukle. Oncelik: lokal dosya > Gist > env var."""
+    # 1) Lokal dosya (gelistirme ortami)
     campaigns_path = os.path.join(os.path.dirname(__file__), "campaigns.json")
-    with open(campaigns_path, "r", encoding="utf-8") as f:
-        return json.load(f)
+    if os.path.exists(campaigns_path):
+        with open(campaigns_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    # 2) Private GitHub Gist (production - dinamik guncelleme)
+    gist_url = os.environ.get("CAMPAIGNS_GIST_URL")
+    if gist_url:
+        resp = requests.get(gist_url, timeout=10)
+        resp.raise_for_status()
+        return resp.json()
+    # 3) Env var fallback
+    campaigns_env = os.environ.get("CAMPAIGNS_JSON")
+    if campaigns_env:
+        return json.loads(campaigns_env)
+    raise FileNotFoundError(
+        "campaigns.json bulunamadi, CAMPAIGNS_GIST_URL ve CAMPAIGNS_JSON env var tanimli degil."
+    )
 
 
 def pick_url(urls):
