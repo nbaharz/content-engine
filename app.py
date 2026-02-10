@@ -17,8 +17,9 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# workflow endpoint
+# workflow endpoints
 WORKFLOW_ENDPOINT = "workflows/baharyavuz/grupanya-content-engine"
+CAPTION_WORKFLOW_ENDPOINT = "workflows/baharyavuz/grupanya-content-caption"
 
 CAMPAIGNS_PATH = os.path.join(os.path.dirname(__file__), "campaigns.json")
 
@@ -211,6 +212,39 @@ def add_campaign():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route('/scrape-campaign', methods=['POST'])
+def scrape_campaign():
+    """Kampanya URL'sini scrape edip bilgilerini doldur ve kaydet."""
+    try:
+        campaign_id = int(request.json.get('campaign_id'))
+        campaigns = load_campaigns()
+        campaign = next((c for c in campaigns if c["id"] == campaign_id), None)
+
+        if not campaign:
+            return jsonify({"error": "Kampanya bulunamadi"}), 404
+
+        url = campaign.get("url", "")
+        if not url:
+            return jsonify({"error": "Kampanyanin URL'si yok"}), 400
+
+        page_content = scrape_campaign_page(url)
+        info = extract_campaign_info(page_content)
+
+        campaign["title"] = info["title"]
+        campaign["category"] = info["category"]
+        campaign["discount"] = info["discount"]
+        save_campaigns(campaigns)
+
+        return jsonify({"success": True, "campaign": campaign})
+
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": f"Sayfa yuklenemedi: {str(e)}"}), 400
+    except json.JSONDecodeError:
+        return jsonify({"error": "AI yaniti parse edilemedi, tekrar deneyin"}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route('/update-campaign', methods=['POST'])
 def update_campaign():
     """Kampanya bilgilerini güncelle"""
@@ -272,6 +306,48 @@ def generate():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@app.route('/generate-caption', methods=['POST'])
+def generate_caption():
+    """AI ile kampanya caption'i olustur (grupanya-content-caption workflow)."""
+    try:
+        if not os.getenv("FAL_KEY"):
+            return jsonify({"error": "FAL_KEY environment variable bulunamadi"}), 400
+
+        campaign_id = int(request.json.get('campaign_id'))
+        campaign = next((c for c in load_campaigns() if c["id"] == campaign_id), None)
+
+        if not campaign:
+            return jsonify({"error": "Kampanya bulunamadi"}), 404
+
+        system_prompt = (
+            "Sen Grupanya sosyal medya yoneticisisin. Turkce, kisa, esprili "
+            "ve satis odakli yaz. 1 CTA ve 1-2 hashtag ekle."
+        )
+        text_prompt = (
+            f"{campaign['title']} kampanyasi: {campaign['discount']} indirim. "
+            "Instagram post metni yaz."
+        )
+
+        handler = fal_client.submit(
+            CAPTION_WORKFLOW_ENDPOINT,
+            arguments={
+                "text_prompt": text_prompt,
+                "system_prompt": system_prompt,
+            },
+        )
+        result = handler.get()
+
+        caption = result.get("output", "") or result.get("text", "")
+        if not caption:
+            return jsonify({"error": "Workflow caption dondurmedi"}), 500
+
+        return jsonify({"success": True, "caption": caption})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 def generate_ai_poster(image_data_list, campaign):
     """
@@ -340,7 +416,7 @@ def generate_ai_poster(image_data_list, campaign):
             "strength": 0.28,
             "num_inference_steps": 28,
             "guidance_scale": 3.5,
-            "image_size": "square_hd",
+            "image_size": {"width": 1080, "height": 1350},
         },
     )
 

@@ -17,7 +17,7 @@ else:
     FONT_REGULAR = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
     FONT_BLACK = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 
-SIZE = (1080, 1080)
+SIZE = (1080, 1350)
 
 
 def _load_font(path, size):
@@ -111,7 +111,6 @@ def create_poster(image_bytes, title, discount, title_y_percent=58):
     # Fontlar - Türkçe karakter desteği için FONT_UNICODE öncelikli
     font_title = _load_font(FONT_UNICODE, 58)
     font_discount = _load_font(FONT_UNICODE, 52)
-    font_cta = _load_font(FONT_UNICODE, 34)
 
     # === KAMPANYA BASLIGI (alt bolge) ===
     if len(title) > 40:
@@ -137,15 +136,6 @@ def create_poster(image_bytes, title, discount, title_y_percent=58):
     # === INDIRIM BADGE (basligin altinda) ===
     badge_y = title_start_y + 40
     _draw_discount_badge(draw, discount, width // 2, int(badge_y), font_discount)
-
-    # === CTA (en alt) ===
-    draw.text(
-        (width // 2, height - 60),
-        "Fırsat için hemen tıkla!",
-        fill="white",
-        font=font_cta,
-        anchor="mm",
-    )
 
     # Kaydet
     output = BytesIO()
@@ -174,7 +164,7 @@ def _crop_to_fill(img, target_width, target_height):
 
 def create_raw_collage(image_bytes_list):
     """
-    Birden fazla gorseli tek bir 1080x1080 collage'a birlestir.
+    Birden fazla gorseli tek bir 1080x1350 collage'a birlestir.
     Text overlay YOK - AI stilizasyonu oncesi ham gorsel.
 
     Args:
@@ -348,7 +338,6 @@ def create_poster_from_multiple(image_bytes_list, title, discount, title_y_perce
     # Fontlar
     font_title = _load_font(FONT_UNICODE, 54)
     font_discount = _load_font(FONT_UNICODE, 46)
-    font_cta = _load_font(FONT_UNICODE, 28)
 
     # === KAMPANYA BASLIGI ===
     if len(title) > 40:
@@ -366,10 +355,8 @@ def create_poster_from_multiple(image_bytes_list, title, discount, title_y_perce
     line_spacing = 64 if len(title) <= 40 else 52
     title_block_h = len(wrapped_lines) * line_spacing
     badge_h = 70
-    cta_h = 36
     spacing_title_badge = 45
-    spacing_badge_cta = 30
-    total_content_h = title_block_h + spacing_title_badge + badge_h + spacing_badge_cta + cta_h
+    total_content_h = title_block_h + spacing_title_badge + badge_h
 
     if title_y_percent is not None:
         content_start_y = int(height * (max(10, min(90, title_y_percent)) / 100.0))
@@ -384,16 +371,6 @@ def create_poster_from_multiple(image_bytes_list, title, discount, title_y_perce
     # === INDIRIM BADGE ===
     badge_y = title_y + spacing_title_badge
     _draw_discount_badge(draw, discount, width // 2, int(badge_y), font_discount)
-
-    # === CTA ===
-    cta_y = badge_y + spacing_badge_cta + badge_h // 2
-    draw.text(
-        (width // 2, cta_y),
-        "Fırsat için hemen tıkla!",
-        fill=(255, 255, 255, 180),
-        font=font_cta,
-        anchor="mm",
-    )
 
     # Kaydet
     output = BytesIO()

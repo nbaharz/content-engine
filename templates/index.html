@@ -9,14 +9,15 @@
 <body>
     <div class="container">
         <header>
-            <h1>🎨 Grupanya Content Engine</h1>
-            <p class="subtitle">AI ile Kampanya İçeriği Oluşturucu</p>
+            <h1>Grupanya Content Engine</h1>
+            <p class="subtitle">AI ile Kampanya Icerigi Olusturucu</p>
         </header>
 
+        <!-- KAMPANYA URL ILE EKLE -->
         <div class="card">
             <h2>Kampanya URL'si ile Ekle</h2>
             <div class="url-input-group">
-                <input type="url" id="campaignUrl" class="url-input" placeholder="Kampanya URL'sini yapıştırın (örn: https://www.grupanya.com/...)">
+                <input type="url" id="campaignUrl" class="url-input" placeholder="Kampanya URL'sini yapistirin (orn: https://www.grupanya.com/...)">
                 <button id="addCampaignBtn" class="btn btn-primary btn-add">
                     <span class="btn-text">Kampanya Ekle</span>
                     <span class="btn-loader" style="display: none;">
@@ -34,11 +35,12 @@
             </div>
         </div>
 
+        <!-- KAMPANYA SEC + MODLAR -->
         <div class="card">
-            <h2>Kampanya Seçin</h2>
+            <h2>Kampanya Secin</h2>
             <div class="campaign-selector">
                 <select id="campaignSelect" class="campaign-dropdown">
-                    <option value="">Bir kampanya seçin...</option>
+                    <option value="">Bir kampanya secin...</option>
                     {% for campaign in campaigns %}
                     <option value="{{ campaign.id }}"
                             data-title="{{ campaign.title }}"
@@ -53,21 +55,6 @@
                     </option>
                     {% endfor %}
                 </select>
-
-                <div class="poster-toggle">
-                    <label class="toggle-label">
-                        <input type="checkbox" id="posterMode">
-                        <span class="toggle-switch"></span>
-                        <span class="toggle-text">Afis Modu (gorselin uzerine kampanya bilgilerini yaz)</span>
-                    </label>
-                </div>
-
-                <button id="generateBtn" class="btn btn-primary" disabled>
-                    <span class="btn-text">✨ İçerik Oluştur</span>
-                    <span class="btn-loader" style="display: none;">
-                        <span class="spinner"></span> Oluşturuluyor...
-                    </span>
-                </button>
             </div>
 
             <div id="campaignInfo" class="campaign-info" style="display: none;">
@@ -80,182 +67,176 @@
                     <input type="text" id="infoCategory" class="info-edit-input">
                 </div>
                 <div class="info-item">
-                    <span class="info-label">İndirim:</span>
+                    <span class="info-label">Indirim:</span>
                     <input type="text" id="infoDiscount" class="info-edit-input info-edit-discount">
                 </div>
                 <button id="saveEditBtn" class="btn btn-success btn-save">Kaydet</button>
             </div>
-        </div>
 
-        <div id="errorAlert" class="alert alert-error" style="display: none;">
-            <span class="alert-icon">⚠️</span>
-            <span id="errorMessage"></span>
-        </div>
-
-        <div id="resultSection" class="result-section" style="display: none;">
-            <div class="card result-card">
-                <h2>Gorsel</h2>
-                <div class="image-container">
-                    <img id="generatedImage" src="" alt="Kampanya Görseli">
-                </div>
+            <!-- MODE TAB BUTONLARI -->
+            <div id="modeTabContainer" class="mode-tabs" style="display: none;">
+                <button id="tabManual" class="mode-tab active" data-tab="manual">Manuel Gorsel Yukle</button>
+                <button id="tabAI" class="mode-tab" data-tab="ai">AI ile Post Uret</button>
             </div>
 
-            <div class="card result-card">
-                <h2>Instagram Post Metni</h2>
-                <div class="text-container">
-                    <textarea id="generatedText" rows="6" placeholder="Caption buraya gelecek..."></textarea>
-                </div>
-                <div class="action-buttons">
-                    <button id="copyTextBtn" class="btn btn-secondary">
-                        Metni Kopyala
-                    </button>
-                    <button id="downloadBtn" class="btn btn-success">
-                        Desktop'a Kaydet
-                    </button>
-                    <button id="instagramBtn" class="btn btn-instagram">
-                        Instagram'a Paylas
-                    </button>
-                </div>
-            </div>
+            <!-- ========== PANEL A: MANUEL GORSEL YUKLE ========== -->
+            <div id="panelManual" class="tab-panel" style="display: none;">
 
-            <!-- Manuel Afis Olustur -->
-            <div class="card result-card">
-                <h2>Manuel Gorsellerden Afis Olustur</h2>
-                <p class="section-desc">Kendi gorsellerinizi yukleyerek profesyonel afisler olusturun (maks. 4 gorsel)</p>
+                <!-- Gorsel Yukleme -->
+                <div class="multi-upload-area">
+                    <input type="file" id="manualImageFiles" accept="image/*" multiple style="display: none;">
+                    <button id="selectManualFilesBtn" class="btn btn-secondary">Gorsel Sec</button>
+                    <div id="manualFilesPreview" class="files-preview"></div>
+                </div>
 
-                <div class="poster-mode-selector">
-                    <label>Afis Modu:</label>
+                <!-- Post Tipi: Kolaj / Carousel -->
+                <div class="post-type-selector">
+                    <label>Post Tipi:</label>
                     <div class="radio-group">
                         <label class="radio-label">
-                            <input type="radio" name="posterAiMode" value="basic" checked>
-                            <span>Basic (Hizli)</span>
+                            <input type="radio" name="manualPostType" value="collage" checked>
+                            <span>Kolaj (Tek Gorsel)</span>
                         </label>
                         <label class="radio-label">
-                            <input type="radio" name="posterAiMode" value="ai">
-                            <span>AI Stilize (Flux)</span>
+                            <input type="radio" name="manualPostType" value="carousel">
+                            <span>Carousel (Kaydirmali)</span>
                         </label>
                     </div>
-                    <p id="aiModeDesc" class="ai-mode-desc" style="display: none;">
-                        AI, gorsellerinizi profesyonel poster estetigine cevirir. ~30sn surer.
-                    </p>
                 </div>
 
-                <div class="multi-upload-area">
-                    <input type="file" id="posterImageFiles" accept="image/*" multiple style="display: none;">
-                    <button id="selectPosterFilesBtn" class="btn btn-secondary">
-                        Gorsel Sec (1-4 adet)
-                    </button>
-                    <div id="posterFilesPreview" class="files-preview"></div>
+                <!-- Kolaj Stili (kolaj seciliyse gorunur) -->
+                <div id="manualLayoutSelector" class="post-type-selector">
+                    <label>Kolaj Stili:</label>
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="manualCollageLayout" value="feature" checked>
+                            <span>Feature (1 Buyuk + Kucukler)</span>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="manualCollageLayout" value="full_bleed">
+                            <span>Grid (Esit Boyut)</span>
+                        </label>
+                    </div>
                 </div>
 
-                <div class="action-buttons multi-actions">
-                    <button id="createPostersBtn" class="btn btn-primary" disabled>
-                        <span class="btn-text">Afis Olustur</span>
-                        <span class="btn-loader" style="display: none;">
-                            <span class="spinner"></span> Olusturuluyor...
-                        </span>
-                    </button>
+                <!-- Afis Modu Toggle -->
+                <div class="poster-toggle">
+                    <label class="toggle-label">
+                        <input type="checkbox" id="manualPosterMode">
+                        <span class="toggle-switch"></span>
+                        <span class="toggle-text">Afis Modu (gorselin uzerine kampanya bilgilerini yaz)</span>
+                    </label>
                 </div>
 
-                <div id="posterResults" class="poster-results" style="display: none;">
-                    <h3>Olusturulan Afis</h3>
+                <!-- Onizle Butonu -->
+                <button id="manualPreviewBtn" class="btn btn-primary" disabled>
+                    <span class="btn-text">Onizle</span>
+                    <span class="btn-loader" style="display: none;">
+                        <span class="spinner"></span> Olusturuluyor...
+                    </span>
+                </button>
+
+                <!-- Onizleme Alani -->
+                <div id="manualPreview" style="display: none; margin-top: 1.5rem;">
+                    <h3>Onizleme</h3>
                     <div class="image-container">
-                        <img id="posterResultImage" src="" alt="Poster">
+                        <img id="manualPreviewImage" src="" alt="Onizleme">
                     </div>
 
-                    <div class="position-adjuster">
+                    <!-- Poster Ayar (afis modunda gorunur) -->
+                    <div id="manualPosterAdjuster" class="position-adjuster" style="display: none;">
                         <label>Afis Duzenle:</label>
                         <div class="edit-field">
                             <span class="edit-label">Baslik:</span>
-                            <input type="text" id="posterTitleEdit" class="edit-input" placeholder="Kampanya basligi">
+                            <input type="text" id="manualPosterTitle" class="edit-input" placeholder="Kampanya basligi">
                         </div>
                         <div class="edit-field">
                             <span class="edit-label">Indirim:</span>
-                            <input type="text" id="posterDiscountEdit" class="edit-input edit-input-short" placeholder="Indirim bilgisi">
+                            <input type="text" id="manualPosterDiscount" class="edit-input edit-input-short" placeholder="Indirim bilgisi">
                         </div>
                         <div class="edit-field">
                             <span class="edit-label">Konum:</span>
                             <div class="slider-row">
                                 <span class="slider-label">Yukari</span>
-                                <input type="range" id="titlePositionSlider" min="20" max="85" value="58" class="position-slider">
+                                <input type="range" id="manualPositionSlider" min="20" max="85" value="65" class="position-slider">
                                 <span class="slider-label">Asagi</span>
                             </div>
                         </div>
-                        <button id="applyPositionBtn" class="btn btn-secondary btn-sm">
+                        <button id="manualApplyPositionBtn" class="btn btn-secondary btn-sm">
                             <span class="btn-text">Uygula</span>
                             <span class="btn-loader" style="display: none;">
                                 <span class="spinner"></span> Render...
                             </span>
                         </button>
                     </div>
-
-                    <div class="action-buttons multi-actions" style="margin-top: 1rem;">
-                        <button id="postPosterBtn" class="btn btn-instagram" disabled>
-                            Instagram'a Paylas
-                        </button>
-                    </div>
                 </div>
-            </div>
 
-            <!-- Coklu Gorsel ile Paylas -->
-            <div class="card result-card">
-                <h2>Coklu Gorsel ile Paylas</h2>
-                <p class="section-desc">Isletmenizin kendi gorsellerini yukleyerek carousel veya kolaj olarak paylasin</p>
-
-                <div class="multi-upload-area">
-                    <input type="file" id="multiImageFiles" accept="image/*" multiple style="display: none;">
-                    <button id="selectMultiFilesBtn" class="btn btn-secondary">
-                        Gorselleri Sec (2-10 adet)
+                <!-- AI Caption Uret -->
+                <div style="margin-top: 1.5rem;">
+                    <button id="generateCaptionBtn" class="btn btn-primary" disabled>
+                        <span class="btn-text">AI Caption Uret</span>
+                        <span class="btn-loader" style="display: none;">
+                            <span class="spinner"></span> Caption uretiliyor...
+                        </span>
                     </button>
-                    <div id="selectedFilesPreview" class="files-preview"></div>
-                </div>
-
-                <div class="post-type-selector">
-                    <label>Post Tipi:</label>
-                    <div class="radio-group">
-                        <label class="radio-label">
-                            <input type="radio" name="postType" value="carousel" checked>
-                            <span>Carousel (Kaydirmali)</span>
-                        </label>
-                        <label class="radio-label">
-                            <input type="radio" name="postType" value="collage">
-                            <span>Kolaj (Tek Gorsel)</span>
-                        </label>
+                    <div class="text-container" style="margin-top: 1rem;">
+                        <textarea id="manualCaption" rows="4" placeholder="Caption buraya gelecek... (AI ile uretebilir veya kendiniz yazabilirsiniz)"></textarea>
                     </div>
                 </div>
 
-                <div id="layoutSelector" class="post-type-selector" style="display: none;">
-                    <label>Kolaj Stili:</label>
-                    <div class="radio-group">
-                        <label class="radio-label">
-                            <input type="radio" name="collageLayout" value="feature" checked>
-                            <span>Feature (1 Buyuk + Kucukler)</span>
-                        </label>
-                        <label class="radio-label">
-                            <input type="radio" name="collageLayout" value="full_bleed">
-                            <span>Grid (Esit Boyut)</span>
-                        </label>
-                    </div>
-                </div>
-
-                <div class="action-buttons multi-actions">
-                    <button id="uploadMultiBtn" class="btn btn-primary" disabled>
-                        Gorselleri Yukle
-                    </button>
-                    <button id="previewCollageBtn" class="btn btn-secondary" disabled style="display: none;">
-                        Kolaj Onizle
-                    </button>
-                    <button id="postMultiBtn" class="btn btn-instagram" disabled>
+                <!-- Instagram Paylas -->
+                <div class="action-buttons multi-actions" style="margin-top: 1rem;">
+                    <button id="manualInstagramBtn" class="btn btn-instagram" disabled>
                         Instagram'a Paylas
                     </button>
                 </div>
+            </div>
 
-                <!-- Kolaj Önizleme -->
-                <div id="collagePreview" class="collage-preview" style="display: none;">
-                    <h3>Kolaj Önizleme</h3>
-                    <img id="collageImage" src="" alt="Kolaj Önizleme">
+            <!-- ========== PANEL B: AI ILE POST URET ========== -->
+            <div id="panelAI" class="tab-panel" style="display: none;">
+
+                <!-- Poster Modu Toggle -->
+                <div class="poster-toggle">
+                    <label class="toggle-label">
+                        <input type="checkbox" id="aiPosterMode">
+                        <span class="toggle-switch"></span>
+                        <span class="toggle-text">Afis Modu (gorselin uzerine kampanya bilgilerini yaz)</span>
+                    </label>
+                </div>
+
+                <!-- Icerik Olustur Butonu -->
+                <button id="generateBtn" class="btn btn-primary">
+                    <span class="btn-text">Icerik Olustur</span>
+                    <span class="btn-loader" style="display: none;">
+                        <span class="spinner"></span> Olusturuluyor...
+                    </span>
+                </button>
+
+                <!-- AI Sonuc Alani -->
+                <div id="aiResultSection" style="display: none; margin-top: 1.5rem;">
+                    <h3>Gorsel</h3>
+                    <div class="image-container">
+                        <img id="aiGeneratedImage" src="" alt="Kampanya Gorseli">
+                    </div>
+
+                    <div class="text-container" style="margin-top: 1.5rem;">
+                        <h3>Instagram Post Metni</h3>
+                        <textarea id="aiGeneratedText" rows="6" placeholder="Caption buraya gelecek..."></textarea>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button id="aiCopyTextBtn" class="btn btn-secondary">Metni Kopyala</button>
+                        <button id="aiDownloadBtn" class="btn btn-success">Desktop'a Kaydet</button>
+                        <button id="aiInstagramBtn" class="btn btn-instagram">Instagram'a Paylas</button>
+                    </div>
                 </div>
             </div>
+        </div>
+
+        <!-- HATA MESAJI -->
+        <div id="errorAlert" class="alert alert-error" style="display: none;">
+            <span class="alert-icon">&#9888;&#65039;</span>
+            <span id="errorMessage"></span>
         </div>
     </div>
 
@@ -264,11 +245,7 @@
         const generateBtn = document.getElementById('generateBtn');
         const campaignInfo = document.getElementById('campaignInfo');
         const errorAlert = document.getElementById('errorAlert');
-        const resultSection = document.getElementById('resultSection');
-
-        // Son oluşturulan içerik bilgileri
-        let currentImageUrl = null;
-        let currentCaption = null;
+        const modeTabContainer = document.getElementById('modeTabContainer');
 
         // ========== KAMPANYA URL'DEN EKLEME ==========
         const addCampaignBtn = document.getElementById('addCampaignBtn');
@@ -280,11 +257,10 @@
             const url = campaignUrlInput.value.trim();
             if (!url) {
                 addCampaignError.style.display = 'flex';
-                document.getElementById('addCampaignErrorMsg').textContent = 'Lütfen bir URL girin';
+                document.getElementById('addCampaignErrorMsg').textContent = 'Lutfen bir URL girin';
                 return;
             }
 
-            // Loading state
             addCampaignBtn.disabled = true;
             addCampaignBtn.querySelector('.btn-text').style.display = 'none';
             addCampaignBtn.querySelector('.btn-loader').style.display = 'inline-flex';
@@ -297,34 +273,25 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ url: url })
                 });
-
                 const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.error || 'Bir hata oluştu');
-                }
+                if (!response.ok) throw new Error(data.error || 'Bir hata olustu');
 
                 const campaign = data.campaign;
-
-                // Dropdown'a yeni kampanyayı ekle
                 const option = document.createElement('option');
                 option.value = campaign.id;
                 option.dataset.title = campaign.title;
                 option.dataset.category = campaign.category;
                 option.dataset.discount = campaign.discount;
+                option.dataset.url = url;
                 option.textContent = `${campaign.title} - ${campaign.discount} indirim`;
                 campaignSelect.appendChild(option);
 
-                // Yeni eklenen kampanyayı seç
                 campaignSelect.value = campaign.id;
                 campaignSelect.dispatchEvent(new Event('change'));
 
-                // Başarı mesajı
                 addCampaignSuccess.style.display = 'flex';
                 document.getElementById('addCampaignSuccessMsg').textContent =
-                    `"${campaign.title}" kampanyası eklendi!`;
-
-                // URL input'unu temizle
+                    `"${campaign.title}" kampanyasi eklendi!`;
                 campaignUrlInput.value = '';
 
             } catch (error) {
@@ -337,30 +304,81 @@
             }
         });
 
-        // Enter tuşuyla da ekleyebilsin
         campaignUrlInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                addCampaignBtn.click();
-            }
+            if (e.key === 'Enter') addCampaignBtn.click();
         });
 
-        // Kampanya seçimi değiştiğinde
-        campaignSelect.addEventListener('change', function() {
+        // ========== KAMPANYA SECIMI ==========
+        campaignSelect.addEventListener('change', async function() {
             const selectedOption = this.options[this.selectedIndex];
             if (this.value) {
-                generateBtn.disabled = false;
                 campaignInfo.style.display = 'block';
+                modeTabContainer.style.display = 'flex';
 
-                document.getElementById('infoTitle').value = selectedOption.dataset.title;
-                document.getElementById('infoCategory').value = selectedOption.dataset.category;
-                document.getElementById('infoDiscount').value = selectedOption.dataset.discount;
+                // Alanlar bossa otomatik scrape et
+                if (!selectedOption.dataset.title) {
+                    generateBtn.disabled = true;
+                    document.getElementById('generateCaptionBtn').disabled = true;
+                    document.getElementById('infoTitle').value = '';
+                    document.getElementById('infoCategory').value = '';
+                    document.getElementById('infoDiscount').value = '';
+
+                    const saveBtn = document.getElementById('saveEditBtn');
+                    const origSaveText = saveBtn.textContent;
+                    saveBtn.textContent = 'Analiz ediliyor...';
+                    saveBtn.disabled = true;
+
+                    try {
+                        const resp = await fetch('/scrape-campaign', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ campaign_id: parseInt(this.value) })
+                        });
+                        const data = await resp.json();
+                        if (!resp.ok) throw new Error(data.error);
+
+                        const c = data.campaign;
+                        selectedOption.dataset.title = c.title;
+                        selectedOption.dataset.category = c.category;
+                        selectedOption.dataset.discount = c.discount;
+                        selectedOption.textContent = `${c.title} - ${c.discount} indirim`;
+
+                        document.getElementById('infoTitle').value = c.title;
+                        document.getElementById('infoCategory').value = c.category;
+                        document.getElementById('infoDiscount').value = c.discount;
+                        generateBtn.disabled = false;
+                        document.getElementById('generateCaptionBtn').disabled = false;
+                    } catch (err) {
+                        errorAlert.style.display = 'flex';
+                        document.getElementById('errorMessage').textContent = 'Scrape hatasi: ' + err.message;
+                    } finally {
+                        saveBtn.textContent = origSaveText;
+                        saveBtn.disabled = false;
+                    }
+                } else {
+                    document.getElementById('infoTitle').value = selectedOption.dataset.title;
+                    document.getElementById('infoCategory').value = selectedOption.dataset.category;
+                    document.getElementById('infoDiscount').value = selectedOption.dataset.discount;
+                    generateBtn.disabled = false;
+                    document.getElementById('generateCaptionBtn').disabled = false;
+                }
+
+                // Ilk tab'i aktive et (eger henuz bir panel gorunmuyorsa)
+                if (document.getElementById('panelManual').style.display === 'none' &&
+                    document.getElementById('panelAI').style.display === 'none') {
+                    switchTab('manual');
+                }
             } else {
-                generateBtn.disabled = true;
                 campaignInfo.style.display = 'none';
+                modeTabContainer.style.display = 'none';
+                document.getElementById('panelManual').style.display = 'none';
+                document.getElementById('panelAI').style.display = 'none';
+                generateBtn.disabled = true;
+                document.getElementById('generateCaptionBtn').disabled = true;
             }
 
-            // Önceki sonuçları temizle
-            resultSection.style.display = 'none';
+            document.getElementById('aiResultSection').style.display = 'none';
+            document.getElementById('manualPreview').style.display = 'none';
             errorAlert.style.display = 'none';
         });
 
@@ -374,7 +392,7 @@
             const newDiscount = document.getElementById('infoDiscount').value.trim();
 
             if (!newTitle || !newCategory || !newDiscount) {
-                alert('Tüm alanları doldurun');
+                alert('Tum alanlari doldurun');
                 return;
             }
 
@@ -389,11 +407,9 @@
                         discount: newDiscount
                     })
                 });
-
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.error);
 
-                // Dropdown'daki option'u güncelle
                 const selectedOption = campaignSelect.options[campaignSelect.selectedIndex];
                 selectedOption.dataset.title = newTitle;
                 selectedOption.dataset.category = newCategory;
@@ -403,187 +419,56 @@
                 const originalText = this.textContent;
                 this.textContent = 'Kaydedildi!';
                 setTimeout(() => { this.textContent = originalText; }, 2000);
-
             } catch (error) {
                 alert('Hata: ' + error.message);
             }
         });
 
-        // İçerik oluştur
-        generateBtn.addEventListener('click', async function() {
-            const campaignId = campaignSelect.value;
-            if (!campaignId) return;
+        // ========== TAB SWITCHING ==========
+        const tabManual = document.getElementById('tabManual');
+        const tabAI = document.getElementById('tabAI');
+        const panelManual = document.getElementById('panelManual');
+        const panelAI = document.getElementById('panelAI');
 
-            // Loading state
-            generateBtn.disabled = true;
-            generateBtn.querySelector('.btn-text').style.display = 'none';
-            generateBtn.querySelector('.btn-loader').style.display = 'inline-flex';
-            resultSection.style.display = 'none';
-            errorAlert.style.display = 'none';
+        function switchTab(tabName) {
+            tabManual.classList.toggle('active', tabName === 'manual');
+            tabAI.classList.toggle('active', tabName === 'ai');
+            panelManual.style.display = tabName === 'manual' ? 'block' : 'none';
+            panelAI.style.display = tabName === 'ai' ? 'block' : 'none';
+        }
 
-            try {
-                const response = await fetch('/generate', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        campaign_id: parseInt(campaignId),
-                        poster_mode: document.getElementById('posterMode').checked
-                    })
-                });
+        tabManual.addEventListener('click', () => switchTab('manual'));
+        tabAI.addEventListener('click', () => switchTab('ai'));
 
-                const data = await response.json();
+        // ========== MANUEL GORSEL YUKLE TAB ==========
+        let manualUploadedUrls = [];
+        let manualCollageUrl = null;
+        let manualPosterUrl = null;
+        let manualRawBase64 = null;
 
-                if (!response.ok) {
-                    throw new Error(data.error || 'Bir hata oluştu');
-                }
+        const manualFileInput = document.getElementById('manualImageFiles');
+        const selectManualFilesBtn = document.getElementById('selectManualFilesBtn');
+        const manualFilesPreview = document.getElementById('manualFilesPreview');
+        const manualPreviewBtn = document.getElementById('manualPreviewBtn');
+        const manualInstagramBtn = document.getElementById('manualInstagramBtn');
+        const generateCaptionBtn = document.getElementById('generateCaptionBtn');
 
-                // Sonuçları göster
-                document.getElementById('generatedImage').src = 'data:image/jpeg;base64,' + data.image_base64;
-                document.getElementById('generatedText').value = data.post_text;
-                resultSection.style.display = 'block';
+        // Dosya secme
+        selectManualFilesBtn.addEventListener('click', () => manualFileInput.click());
 
-                // Instagram için sakla
-                currentImageUrl = data.image_url;
+        manualFileInput.addEventListener('change', function() {
+            manualFilesPreview.innerHTML = '';
+            manualUploadedUrls = [];
+            manualCollageUrl = null;
+            manualPosterUrl = null;
+            manualRawBase64 = null;
+            document.getElementById('manualPreview').style.display = 'none';
+            manualInstagramBtn.disabled = true;
 
-                // Scroll to results
-                resultSection.scrollIntoView({ behavior: 'smooth' });
+            const postType = document.querySelector('input[name="manualPostType"]:checked').value;
+            const maxFiles = postType === 'carousel' ? 10 : 4;
+            const files = Array.from(this.files).slice(0, maxFiles);
 
-            } catch (error) {
-                errorAlert.style.display = 'flex';
-                document.getElementById('errorMessage').textContent = error.message;
-            } finally {
-                // Reset button
-                generateBtn.disabled = false;
-                generateBtn.querySelector('.btn-text').style.display = 'inline';
-                generateBtn.querySelector('.btn-loader').style.display = 'none';
-            }
-        });
-
-        // Metni kopyala
-        document.getElementById('copyTextBtn').addEventListener('click', function() {
-            const text = document.getElementById('generatedText').value;
-            navigator.clipboard.writeText(text).then(() => {
-                const originalText = this.textContent;
-                this.textContent = '✓ Kopyalandı!';
-                setTimeout(() => {
-                    this.textContent = originalText;
-                }, 2000);
-            });
-        });
-
-        // Desktop'a kaydet
-        document.getElementById('downloadBtn').addEventListener('click', async function() {
-            const campaignId = campaignSelect.value;
-            const originalText = this.textContent;
-            this.disabled = true;
-            this.textContent = '💾 Kaydediliyor...';
-
-            try {
-                const response = await fetch(`/download/${campaignId}`);
-                const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.error || 'Kayıt başarısız');
-                }
-
-                this.textContent = '✓ Kaydedildi!';
-                alert(data.message);
-
-                setTimeout(() => {
-                    this.textContent = originalText;
-                    this.disabled = false;
-                }, 2000);
-
-            } catch (error) {
-                alert('Hata: ' + error.message);
-                this.textContent = originalText;
-                this.disabled = false;
-            }
-        });
-
-        // Instagram'a paylaş
-        document.getElementById('instagramBtn').addEventListener('click', async function() {
-            const caption = document.getElementById('generatedText').value.trim();
-            if (!currentImageUrl || !caption) {
-                alert('Önce içerik oluşturmalısınız!');
-                return;
-            }
-
-            if (!confirm('Bu içeriği Instagram\'a paylaşmak istediğinize emin misiniz?')) {
-                return;
-            }
-
-            const originalText = this.textContent;
-            this.disabled = true;
-            this.textContent = '📸 Paylaşılıyor...';
-
-            try {
-                const response = await fetch('/post-instagram', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        image_url: currentImageUrl,
-                        caption: caption
-                    })
-                });
-
-                const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.error || 'Paylaşım başarısız');
-                }
-
-                this.textContent = '✓ Paylaşıldı!';
-                alert(data.message + '\nPost ID: ' + data.post_id);
-
-                setTimeout(() => {
-                    this.textContent = originalText;
-                    this.disabled = false;
-                }, 3000);
-
-            } catch (error) {
-                alert('Hata: ' + error.message);
-                this.textContent = originalText;
-                this.disabled = false;
-            }
-        });
-
-        // ========== MANUEL AFIS OLUSTURMA ==========
-        let posterUrl = null;
-        let rawImageBase64 = null;
-        let posterMode = 'basic';
-        const posterFileInput = document.getElementById('posterImageFiles');
-        const selectPosterFilesBtn = document.getElementById('selectPosterFilesBtn');
-        const createPostersBtn = document.getElementById('createPostersBtn');
-        const posterFilesPreview = document.getElementById('posterFilesPreview');
-        const posterResults = document.getElementById('posterResults');
-        const posterResultImage = document.getElementById('posterResultImage');
-        const postPosterBtn = document.getElementById('postPosterBtn');
-        const aiModeDesc = document.getElementById('aiModeDesc');
-
-        // AI mode toggle
-        document.querySelectorAll('input[name="posterAiMode"]').forEach(radio => {
-            radio.addEventListener('change', function() {
-                const isAi = this.value === 'ai';
-                aiModeDesc.style.display = isAi ? 'block' : 'none';
-                createPostersBtn.querySelector('.btn-text').textContent =
-                    isAi ? 'AI Afis Olustur' : 'Afis Olustur';
-            });
-        });
-
-        selectPosterFilesBtn.addEventListener('click', () => posterFileInput.click());
-
-        posterFileInput.addEventListener('change', function() {
-            posterFilesPreview.innerHTML = '';
-            posterUrl = null;
-            posterResults.style.display = 'none';
-            postPosterBtn.disabled = true;
-
-            const files = Array.from(this.files).slice(0, 4);
             files.forEach((file, idx) => {
                 const reader = new FileReader();
                 reader.onload = (e) => {
@@ -593,71 +478,136 @@
                         <img src="${e.target.result}" alt="Preview ${idx + 1}">
                         <span class="preview-number">${idx + 1}</span>
                     `;
-                    posterFilesPreview.appendChild(div);
+                    manualFilesPreview.appendChild(div);
                 };
                 reader.readAsDataURL(file);
             });
 
-            if (files.length > 4) {
-                alert('En fazla 4 gorsel secebilirsiniz');
-            }
-            createPostersBtn.disabled = files.length === 0;
+            manualPreviewBtn.disabled = files.length === 0;
         });
 
-        createPostersBtn.addEventListener('click', async function() {
+        // Post tipi degisince
+        document.querySelectorAll('input[name="manualPostType"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const isCollage = this.value === 'collage';
+                document.getElementById('manualLayoutSelector').style.display = isCollage ? 'block' : 'none';
+                // Dosya secimini sifirla
+                manualFileInput.value = '';
+                manualFilesPreview.innerHTML = '';
+                manualUploadedUrls = [];
+                manualCollageUrl = null;
+                manualPosterUrl = null;
+                document.getElementById('manualPreview').style.display = 'none';
+                manualPreviewBtn.disabled = true;
+                manualInstagramBtn.disabled = true;
+            });
+        });
+
+        // AI Caption uret
+        generateCaptionBtn.addEventListener('click', async function() {
             const campaignId = campaignSelect.value;
-            if (!campaignId) {
-                alert('Once bir kampanya secin');
-                return;
-            }
-
-            const files = Array.from(posterFileInput.files).slice(0, 4);
-            if (!files || files.length === 0) return;
-
-            const isAiMode = document.querySelector('input[name="posterAiMode"]:checked').value === 'ai';
+            if (!campaignId) return;
 
             this.disabled = true;
             this.querySelector('.btn-text').style.display = 'none';
-            const loader = this.querySelector('.btn-loader');
-            loader.style.display = 'inline-flex';
-            if (isAiMode) {
-                loader.innerHTML = '<span class="spinner"></span> AI stilize ediyor (~30sn)...';
-            } else {
-                loader.innerHTML = '<span class="spinner"></span> Olusturuluyor...';
-            }
+            this.querySelector('.btn-loader').style.display = 'inline-flex';
 
             try {
-                const formData = new FormData();
-                files.forEach(file => {
-                    formData.append('files', file);
-                });
-                formData.append('campaign_id', campaignId);
-                formData.append('ai_mode', isAiMode ? 'true' : 'false');
-
-                const response = await fetch('/create-posters', {
+                const response = await fetch('/generate-caption', {
                     method: 'POST',
-                    body: formData
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ campaign_id: parseInt(campaignId) })
                 });
-
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.error);
 
-                // Tek birlesmis poster sonucunu goster
-                posterUrl = data.poster.image_url;
-                posterResultImage.src = 'data:image/jpeg;base64,' + data.poster.image_base64;
-                rawImageBase64 = data.raw_image_base64;
-                posterMode = data.mode || 'basic';
+                document.getElementById('manualCaption').value = data.caption;
+            } catch (error) {
+                alert('Caption uretme hatasi: ' + error.message);
+            } finally {
+                this.disabled = false;
+                this.querySelector('.btn-text').style.display = 'inline';
+                this.querySelector('.btn-loader').style.display = 'none';
+            }
+        });
 
-                // Edit alanlari doldur
-                const selectedOpt = campaignSelect.options[campaignSelect.selectedIndex];
-                document.getElementById('posterTitleEdit').value = selectedOpt.dataset.title || '';
-                document.getElementById('posterDiscountEdit').value = selectedOpt.dataset.discount || '';
-                document.getElementById('titlePositionSlider').value =
-                    posterMode === 'ai' ? 58 : 65;
+        // Onizle butonu
+        manualPreviewBtn.addEventListener('click', async function() {
+            const campaignId = campaignSelect.value;
+            if (!campaignId) { alert('Once kampanya secin'); return; }
 
-                posterResults.style.display = 'block';
-                postPosterBtn.disabled = false;
-                posterResults.scrollIntoView({ behavior: 'smooth' });
+            const files = Array.from(manualFileInput.files);
+            const postType = document.querySelector('input[name="manualPostType"]:checked').value;
+            const maxFiles = postType === 'carousel' ? 10 : 4;
+            const slicedFiles = files.slice(0, maxFiles);
+            if (!slicedFiles.length) return;
+
+            const posterMode = document.getElementById('manualPosterMode').checked;
+
+            this.disabled = true;
+            this.querySelector('.btn-text').style.display = 'none';
+            this.querySelector('.btn-loader').style.display = 'inline-flex';
+
+            try {
+                if (postType === 'collage') {
+                    const formData = new FormData();
+                    slicedFiles.forEach(file => formData.append('files', file));
+
+                    if (posterMode) {
+                        formData.append('campaign_id', campaignId);
+                        formData.append('ai_mode', 'false');
+
+                        const response = await fetch('/create-posters', { method: 'POST', body: formData });
+                        const data = await response.json();
+                        if (!response.ok) throw new Error(data.error);
+
+                        manualPosterUrl = data.poster.image_url;
+                        manualRawBase64 = data.raw_image_base64;
+                        document.getElementById('manualPreviewImage').src =
+                            'data:image/jpeg;base64,' + data.poster.image_base64;
+
+                        const selOpt = campaignSelect.options[campaignSelect.selectedIndex];
+                        document.getElementById('manualPosterTitle').value = selOpt.dataset.title || '';
+                        document.getElementById('manualPosterDiscount').value = selOpt.dataset.discount || '';
+                        document.getElementById('manualPosterAdjuster').style.display = 'block';
+                    } else {
+                        const layout = document.querySelector('input[name="manualCollageLayout"]:checked').value;
+                        formData.append('layout', layout);
+
+                        const response = await fetch('/create-collage', { method: 'POST', body: formData });
+                        const data = await response.json();
+                        if (!response.ok) throw new Error(data.error);
+
+                        manualCollageUrl = data.image_url;
+                        document.getElementById('manualPreviewImage').src =
+                            'data:image/jpeg;base64,' + data.image_base64;
+                        document.getElementById('manualPosterAdjuster').style.display = 'none';
+                    }
+                } else {
+                    // Carousel: gorselleri yukle
+                    const formData = new FormData();
+                    slicedFiles.forEach(file => formData.append('files', file));
+
+                    const response = await fetch('/upload-images', { method: 'POST', body: formData });
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.error);
+
+                    manualUploadedUrls = data.urls;
+
+                    // Ilk gorseli onizleme olarak goster
+                    if (slicedFiles.length > 0) {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            document.getElementById('manualPreviewImage').src = e.target.result;
+                        };
+                        reader.readAsDataURL(slicedFiles[0]);
+                    }
+                    document.getElementById('manualPosterAdjuster').style.display = 'none';
+                }
+
+                document.getElementById('manualPreview').style.display = 'block';
+                manualInstagramBtn.disabled = false;
+                document.getElementById('manualPreview').scrollIntoView({ behavior: 'smooth' });
 
             } catch (error) {
                 alert('Hata: ' + error.message);
@@ -668,24 +618,15 @@
             }
         });
 
-        // Yazi konumunu ayarla
-        document.getElementById('applyPositionBtn').addEventListener('click', async function() {
-            if (!rawImageBase64) {
-                alert('Once afis olusturun');
-                return;
-            }
-
+        // Poster konum ayarla
+        document.getElementById('manualApplyPositionBtn').addEventListener('click', async function() {
+            if (!manualRawBase64) { alert('Once onizleme yapin'); return; }
             const campaignId = campaignSelect.value;
             if (!campaignId) return;
 
-            const titleYPercent = parseInt(document.getElementById('titlePositionSlider').value);
-            const customTitle = document.getElementById('posterTitleEdit').value.trim();
-            const customDiscount = document.getElementById('posterDiscountEdit').value.trim();
-
-            if (!customTitle || !customDiscount) {
-                alert('Baslik ve indirim alanlari bos olamaz');
-                return;
-            }
+            const customTitle = document.getElementById('manualPosterTitle').value.trim();
+            const customDiscount = document.getElementById('manualPosterDiscount').value.trim();
+            if (!customTitle || !customDiscount) { alert('Baslik ve indirim alanlari bos olamaz'); return; }
 
             this.disabled = true;
             this.querySelector('.btn-text').style.display = 'none';
@@ -696,22 +637,20 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        raw_image_base64: rawImageBase64,
+                        raw_image_base64: manualRawBase64,
                         campaign_id: parseInt(campaignId),
-                        title_y_percent: titleYPercent,
+                        title_y_percent: parseInt(document.getElementById('manualPositionSlider').value),
                         title: customTitle,
                         discount: customDiscount,
-                        mode: posterMode,
+                        mode: 'basic',
                     })
                 });
-
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.error);
 
-                posterUrl = data.poster.image_url;
-                posterResultImage.src = 'data:image/jpeg;base64,' + data.poster.image_base64;
-                postPosterBtn.disabled = false;
-
+                manualPosterUrl = data.poster.image_url;
+                document.getElementById('manualPreviewImage').src =
+                    'data:image/jpeg;base64,' + data.poster.image_base64;
             } catch (error) {
                 alert('Hata: ' + error.message);
             } finally {
@@ -721,20 +660,133 @@
             }
         });
 
-        // Afisi Instagram'a paylas
-        postPosterBtn.addEventListener('click', async function() {
-            const caption = document.getElementById('generatedText').value.trim();
-            if (!caption) {
-                alert('Lutfen yukaridaki metin alanina caption yazin!');
+        // Manuel Instagram paylas
+        manualInstagramBtn.addEventListener('click', async function() {
+            const caption = document.getElementById('manualCaption').value.trim();
+            if (!caption) { alert('Lutfen caption yazin veya AI ile uretin!'); return; }
+
+            const postType = document.querySelector('input[name="manualPostType"]:checked').value;
+
+            if (!confirm('Instagram\'a paylasmak istiyor musunuz?')) return;
+
+            const originalText = this.textContent;
+            this.disabled = true;
+            this.textContent = 'Paylasiliyor...';
+
+            try {
+                let response;
+                if (postType === 'carousel' && manualUploadedUrls.length >= 2) {
+                    response = await fetch('/post-instagram-carousel', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ image_urls: manualUploadedUrls, caption: caption })
+                    });
+                } else {
+                    const imageUrl = manualPosterUrl || manualCollageUrl;
+                    if (!imageUrl) throw new Error('Once onizleme yapin');
+                    response = await fetch('/post-instagram', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ image_url: imageUrl, caption: caption })
+                    });
+                }
+
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error);
+
+                this.textContent = 'Paylasildi!';
+                alert(data.message + '\nPost ID: ' + data.post_id);
+                setTimeout(() => { this.textContent = originalText; this.disabled = false; }, 3000);
+
+            } catch (error) {
+                alert('Hata: ' + error.message);
+                this.textContent = originalText;
+                this.disabled = false;
+            }
+        });
+
+        // ========== AI ILE POST URET TAB ==========
+        let currentAiImageUrl = null;
+
+        generateBtn.addEventListener('click', async function() {
+            const campaignId = campaignSelect.value;
+            if (!campaignId) return;
+
+            this.disabled = true;
+            this.querySelector('.btn-text').style.display = 'none';
+            this.querySelector('.btn-loader').style.display = 'inline-flex';
+            document.getElementById('aiResultSection').style.display = 'none';
+            errorAlert.style.display = 'none';
+
+            try {
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        campaign_id: parseInt(campaignId),
+                        poster_mode: document.getElementById('aiPosterMode').checked
+                    })
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || 'Bir hata olustu');
+
+                document.getElementById('aiGeneratedImage').src =
+                    'data:image/jpeg;base64,' + data.image_base64;
+                document.getElementById('aiGeneratedText').value = data.post_text;
+                document.getElementById('aiResultSection').style.display = 'block';
+                currentAiImageUrl = data.image_url;
+
+                document.getElementById('aiResultSection').scrollIntoView({ behavior: 'smooth' });
+            } catch (error) {
+                errorAlert.style.display = 'flex';
+                document.getElementById('errorMessage').textContent = error.message;
+            } finally {
+                this.disabled = false;
+                this.querySelector('.btn-text').style.display = 'inline';
+                this.querySelector('.btn-loader').style.display = 'none';
+            }
+        });
+
+        // Metni kopyala
+        document.getElementById('aiCopyTextBtn').addEventListener('click', function() {
+            const text = document.getElementById('aiGeneratedText').value;
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = this.textContent;
+                this.textContent = 'Kopyalandi!';
+                setTimeout(() => { this.textContent = originalText; }, 2000);
+            });
+        });
+
+        // Desktop'a kaydet
+        document.getElementById('aiDownloadBtn').addEventListener('click', async function() {
+            const campaignId = campaignSelect.value;
+            const originalText = this.textContent;
+            this.disabled = true;
+            this.textContent = 'Kaydediliyor...';
+
+            try {
+                const response = await fetch(`/download/${campaignId}`);
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || 'Kayit basarisiz');
+
+                this.textContent = 'Kaydedildi!';
+                alert(data.message);
+                setTimeout(() => { this.textContent = originalText; this.disabled = false; }, 2000);
+            } catch (error) {
+                alert('Hata: ' + error.message);
+                this.textContent = originalText;
+                this.disabled = false;
+            }
+        });
+
+        // AI Instagram paylas
+        document.getElementById('aiInstagramBtn').addEventListener('click', async function() {
+            const caption = document.getElementById('aiGeneratedText').value.trim();
+            if (!currentAiImageUrl || !caption) {
+                alert('Once icerik olusturmalisiniz!');
                 return;
             }
-            if (!posterUrl) {
-                alert('Once afis olusturun');
-                return;
-            }
-            if (!confirm('Afisi Instagram\'a paylasmak istiyor musunuz?')) {
-                return;
-            }
+            if (!confirm('Instagram\'a paylasmak istiyor musunuz?')) return;
 
             const originalText = this.textContent;
             this.disabled = true;
@@ -744,257 +796,17 @@
                 const response = await fetch('/post-instagram', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        image_url: posterUrl,
-                        caption: caption
-                    })
+                    body: JSON.stringify({ image_url: currentAiImageUrl, caption: caption })
                 });
-
                 const data = await response.json();
-                if (!response.ok) throw new Error(data.error);
+                if (!response.ok) throw new Error(data.error || 'Paylasim basarisiz');
 
                 this.textContent = 'Paylasildi!';
                 alert(data.message + '\nPost ID: ' + data.post_id);
-
-                setTimeout(() => {
-                    this.textContent = originalText;
-                    this.disabled = false;
-                }, 3000);
-
+                setTimeout(() => { this.textContent = originalText; this.disabled = false; }, 3000);
             } catch (error) {
                 alert('Hata: ' + error.message);
                 this.textContent = originalText;
-                this.disabled = false;
-            }
-        });
-
-        // ========== COKLU GORSEL BOLUMU ==========
-        let uploadedImageUrls = [];
-        let collageUrl = null;
-
-        const multiFileInput = document.getElementById('multiImageFiles');
-        const selectMultiBtn = document.getElementById('selectMultiFilesBtn');
-        const uploadMultiBtn = document.getElementById('uploadMultiBtn');
-        const postMultiBtn = document.getElementById('postMultiBtn');
-        const previewCollageBtn = document.getElementById('previewCollageBtn');
-        const filesPreview = document.getElementById('selectedFilesPreview');
-
-        // Dosya seçme
-        selectMultiBtn.addEventListener('click', () => multiFileInput.click());
-
-        multiFileInput.addEventListener('change', function() {
-            filesPreview.innerHTML = '';
-            uploadedImageUrls = [];
-            collageUrl = null;
-
-            const files = Array.from(this.files).slice(0, 10);
-
-            files.forEach((file, idx) => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const div = document.createElement('div');
-                    div.className = 'preview-item';
-                    div.innerHTML = `
-                        <img src="${e.target.result}" alt="Preview ${idx + 1}">
-                        <span class="preview-number">${idx + 1}</span>
-                    `;
-                    filesPreview.appendChild(div);
-                };
-                reader.readAsDataURL(file);
-            });
-
-            // Butonları güncelle
-            uploadMultiBtn.disabled = files.length < 2;
-            postMultiBtn.disabled = true;
-            previewCollageBtn.disabled = true;
-            document.getElementById('collagePreview').style.display = 'none';
-            updatePostTypeUI();
-        });
-
-        // Post tipi değişikliği
-        document.querySelectorAll('input[name="postType"]').forEach(radio => {
-            radio.addEventListener('change', updatePostTypeUI);
-        });
-
-        function updatePostTypeUI() {
-            const postType = document.querySelector('input[name="postType"]:checked').value;
-            const isCollage = postType === 'collage';
-            previewCollageBtn.style.display = isCollage ? 'inline-flex' : 'none';
-            document.getElementById('layoutSelector').style.display = isCollage ? 'block' : 'none';
-            // Layout değiştiğinde önizlemeyi sıfırla
-            collageUrl = null;
-            document.getElementById('collagePreview').style.display = 'none';
-        }
-
-        // Layout değişikliği
-        document.querySelectorAll('input[name="collageLayout"]').forEach(radio => {
-            radio.addEventListener('change', function() {
-                collageUrl = null;
-                document.getElementById('collagePreview').style.display = 'none';
-            });
-        });
-
-        function getSelectedLayout() {
-            return document.querySelector('input[name="collageLayout"]:checked').value;
-        }
-
-        // Çoklu görsel yükle
-        uploadMultiBtn.addEventListener('click', async function() {
-            const files = multiFileInput.files;
-            if (files.length < 2) return;
-
-            const originalText = this.innerHTML;
-            this.disabled = true;
-            this.innerHTML = '<span class="spinner"></span> Yükleniyor...';
-
-            try {
-                const formData = new FormData();
-                Array.from(files).forEach(file => {
-                    formData.append('files', file);
-                });
-
-                const response = await fetch('/upload-images', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.error);
-                }
-
-                uploadedImageUrls = data.urls;
-                this.innerHTML = '✓ Yüklendi!';
-                postMultiBtn.disabled = false;
-                previewCollageBtn.disabled = false;
-
-                setTimeout(() => {
-                    this.innerHTML = originalText;
-                    this.disabled = false;
-                }, 2000);
-
-            } catch (error) {
-                alert('Hata: ' + error.message);
-                this.innerHTML = originalText;
-                this.disabled = false;
-            }
-        });
-
-        // Kolaj önizle
-        previewCollageBtn.addEventListener('click', async function() {
-            if (uploadedImageUrls.length < 2) return;
-
-            const originalText = this.innerHTML;
-            this.disabled = true;
-            this.innerHTML = '<span class="spinner"></span> Oluşturuluyor...';
-
-            try {
-                const layout = getSelectedLayout();
-                const response = await fetch('/create-collage', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        image_urls: uploadedImageUrls,
-                        layout: layout
-                    })
-                });
-
-                const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.error);
-                }
-
-                collageUrl = data.image_url;
-                document.getElementById('collageImage').src =
-                    'data:image/jpeg;base64,' + data.image_base64;
-                document.getElementById('collagePreview').style.display = 'block';
-
-                this.innerHTML = originalText;
-                this.disabled = false;
-
-            } catch (error) {
-                alert('Hata: ' + error.message);
-                this.innerHTML = originalText;
-                this.disabled = false;
-            }
-        });
-
-        // Instagram'a çoklu paylaş
-        postMultiBtn.addEventListener('click', async function() {
-            const postType = document.querySelector('input[name="postType"]:checked').value;
-            const caption = document.getElementById('generatedText').value.trim();
-
-            if (!caption) {
-                alert('Lütfen yukarıdaki metin alanına caption yazın!');
-                return;
-            }
-
-            if (!confirm(`${postType === 'carousel' ? 'Carousel' : 'Kolaj'} olarak Instagram'a paylaşmak istiyor musunuz?`)) {
-                return;
-            }
-
-            const originalText = this.innerHTML;
-            this.disabled = true;
-            this.innerHTML = '<span class="spinner"></span> Paylaşılıyor...';
-
-            try {
-                let response;
-
-                if (postType === 'carousel') {
-                    response = await fetch('/post-instagram-carousel', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({
-                            image_urls: uploadedImageUrls,
-                            caption: caption
-                        })
-                    });
-                } else {
-                    // Kolaj - önce oluştur, sonra paylaş
-                    if (!collageUrl) {
-                        const layout = getSelectedLayout();
-                        const collageResp = await fetch('/create-collage', {
-                            method: 'POST',
-                            headers: {'Content-Type': 'application/json'},
-                            body: JSON.stringify({
-                                image_urls: uploadedImageUrls,
-                                layout: layout
-                            })
-                        });
-                        const collageData = await collageResp.json();
-                        if (!collageResp.ok) throw new Error(collageData.error);
-                        collageUrl = collageData.image_url;
-                    }
-
-                    response = await fetch('/post-instagram', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({
-                            image_url: collageUrl,
-                            caption: caption
-                        })
-                    });
-                }
-
-                const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.error);
-                }
-
-                this.innerHTML = '✓ Paylaşıldı!';
-                alert(data.message + '\nPost ID: ' + data.post_id);
-
-                setTimeout(() => {
-                    this.innerHTML = originalText;
-                    this.disabled = false;
-                }, 3000);
-
-            } catch (error) {
-                alert('Hata: ' + error.message);
-                this.innerHTML = originalText;
                 this.disabled = false;
             }
         });

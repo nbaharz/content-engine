@@ -57,7 +57,7 @@ def prepare_image(img_bytes: bytes) -> Image.Image:
 
 def create_full_bleed_grid(
     images: List[Image.Image],
-    output_size: Tuple[int, int] = (1080, 1080),
+    output_size: Tuple[int, int] = (1080, 1350),
     gap: int = 3
 ) -> Image.Image:
     """
@@ -115,7 +115,7 @@ def create_full_bleed_grid(
 
 def create_feature_layout(
     images: List[Image.Image],
-    output_size: Tuple[int, int] = (1080, 1080),
+    output_size: Tuple[int, int] = (1080, 1350),
     gap: int = 3
 ) -> Image.Image:
     """
@@ -225,7 +225,7 @@ def create_feature_layout(
 
 def create_collage(
     image_data_list: List[bytes],
-    output_size: Tuple[int, int] = (1080, 1080),
+    output_size: Tuple[int, int] = (1080, 1350),
     layout: LayoutType = "feature",
     gap: int = 3
 ) -> bytes:

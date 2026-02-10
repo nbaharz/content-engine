@@ -807,3 +807,56 @@ header h1 {
         width: 100%;
     }
 }
+
+/* ========== MODE TABS ========== */
+.mode-tabs {
+    display: flex;
+    gap: 0;
+    margin-top: 1.5rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.mode-tab {
+    flex: 1;
+    padding: 0.875rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border: none;
+    border-bottom: 3px solid transparent;
+    background: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+}
+
+.mode-tab:hover {
+    color: var(--primary-color);
+    background: rgba(99, 102, 241, 0.04);
+}
+
+.mode-tab.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+    background: rgba(99, 102, 241, 0.06);
+}
+
+.tab-panel {
+    padding-top: 1.5rem;
+    animation: fadeIn 0.3s ease-in;
+}
+
+.tab-panel h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    margin-top: 1rem;
+    color: var(--text-primary);
+}
+
+@media (max-width: 640px) {
+    .mode-tab {
+        font-size: 0.875rem;
+        padding: 0.75rem 1rem;
+    }
+}
