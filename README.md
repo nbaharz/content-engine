@@ -28,7 +28,7 @@ AI-powered social media content automation tool. Generates campaign visuals, cre
 | Layer | Technology |
 |---|---|
 | AI Image Generation | [fal.ai](https://fal.ai) (Flux, Any LLM) |
-| LLM | Claude Sonnet 4.5 (via fal.ai) |
+| LLM | openai/gpt-4o (via fal.ai) |
 | Image Processing | Pillow |
 | Web Scraping | BeautifulSoup4 |
 | Web UI | Flask |

@@ -1,15 +1,15 @@
 """
-Grupanya Content Engine - Zamanlanmis Otomasyon
-GitHub Actions tarafindan hafta ici gunde 3 kere calistirilir.
+Grupanya Content Engine - Scheduled Automation
+Run by GitHub Actions 3 times daily on weekdays.
 
-Akis:
-1. campaigns.json'dan URL listesini oku
-2. Gundeki sirayla bir URL sec (gunde 3 farkli kampanya)
-3. Sayfayi scrape et, AI ile kampanya bilgilerini cikar
-4. Sayfadaki ilk 3 gorseli al
-5. Gorseller varsa -> poster (afis) modu: collage + text overlay
-   Gorseller yoksa -> fal.ai workflow ile gorsel uret
-6. Instagram'a paylas
+Flow:
+1. Read URL list from campaigns.json
+2. Select a URL based on the day's schedule (3 different campaigns per day)
+3. Scrape the page, extract campaign info with AI
+4. Get the first 3 images from the page
+5. If images exist -> poster mode: collage + text overlay
+   If no images -> generate image via fal.ai workflow
+6. Post to Instagram
 """
 
 import os
@@ -30,21 +30,21 @@ from poster import create_poster, create_poster_from_multiple
 # fal.ai workflow endpoint
 WORKFLOW_ENDPOINT = "workflows/baharyavuz/grupanya-content-engine"
 
-# Turkiye saat dilimi (UTC+3)
+# Turkey timezone (UTC+3)
 TZ_TR = timezone(timedelta(hours=3))
 
-# Calisma saatleri (TR) - (saat, dakika) formatinda
+# Schedule hours (TR) - (hour, minute) format
 SCHEDULE_HOURS = [(9, 0), (11, 20), (18, 0)]
 
 
 def load_campaigns_data():
-    """Kampanya verilerini yukle. Oncelik: lokal dosya > Gist > env var."""
-    # 1) Lokal dosya (gelistirme ortami)
+    """Load campaign data. Priority: local file > Gist > env var."""
+    # 1) Local file (development)
     campaigns_path = os.path.join(os.path.dirname(__file__), "campaigns.json")
     if os.path.exists(campaigns_path):
         with open(campaigns_path, "r", encoding="utf-8") as f:
             return json.load(f)
-    # 2) Private GitHub Gist (production - dinamik guncelleme)
+    # 2) Private GitHub Gist (production - dynamic updates)
     gist_url = os.environ.get("CAMPAIGNS_GIST_URL")
     if gist_url:
         resp = requests.get(gist_url, timeout=10)
@@ -55,29 +55,29 @@ def load_campaigns_data():
     if campaigns_env:
         return json.loads(campaigns_env)
     raise FileNotFoundError(
-        "campaigns.json bulunamadi, CAMPAIGNS_GIST_URL ve CAMPAIGNS_JSON env var tanimli degil."
+        "campaigns.json not found, CAMPAIGNS_GIST_URL and CAMPAIGNS_JSON env vars are not set."
     )
 
 
 def load_campaign_urls():
-    """Kampanya verilerinden URL listesini cikar."""
+    """Extract URL list from campaign data."""
     data = load_campaigns_data()
-    # Yeni format: obje listesi ({"id": ..., "url": ..., ...})
+    # New format: list of objects ({"id": ..., "url": ..., ...})
     if data and isinstance(data[0], dict):
         return [c["url"] for c in data if c.get("url")]
-    # Eski format: duz URL listesi (geriye uyumluluk)
+    # Old format: plain URL list (backward compatibility)
     return data
 
 
 def pick_url(urls):
     """
-    Gundeki sirayla bir URL sec.
-    Gunde 3 calisma: her biri farkli bir URL secer.
+    Select a URL based on the day's schedule.
+    3 runs per day: each picks a different URL.
     """
     now = datetime.now(TZ_TR)
     day_of_year = now.timetuple().tm_yday
 
-    # Simdi kacinci dakikadayiz (gun icinde)
+    # Current minute of the day
     now_minutes = now.hour * 60 + now.minute
     slot = 0
     best_diff = float("inf")
@@ -92,7 +92,7 @@ def pick_url(urls):
 
 
 def scrape_campaign_page(url):
-    """Kampanya sayfasini scrape edip metin icerigini dondur."""
+    """Scrape campaign page and return text content."""
     headers = {
         "User-Agent": (
             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
@@ -124,9 +124,9 @@ def scrape_campaign_page(url):
 
 def scrape_campaign_images(url, max_images=3):
     """
-    Kampanya sayfasindan gorsel URL'lerini cikar.
-    Grupanya gorselleri grpstat.com/DealImages/ altinda bulunur.
-    Buyuk boyutlu gorselleri (766-511) tercih eder.
+    Extract image URLs from campaign page.
+    Grupanya images are located under grpstat.com/DealImages/.
+    Prefers large-sized images (766-511).
     """
     headers = {
         "User-Agent": (
@@ -148,20 +148,20 @@ def scrape_campaign_images(url, max_images=3):
         if not src:
             continue
 
-        # Tam URL'ye cevir
+        # Convert to absolute URL
         src = urljoin(url, src)
 
-        # Grupanya kampanya gorselleri: grpstat.com/DealImages/
+        # Grupanya campaign images: grpstat.com/DealImages/
         if "DealImages" not in src and "dealimages" not in src.lower():
             continue
 
-        # Kucuk thumbnailleri atla (127-85 gibi)
+        # Skip small thumbnails (e.g. 127-85)
         if re.search(r'_\d{2,3}-\d{2,3}\.', src):
             if "_127-85" in src or "_85-85" in src:
                 continue
 
-        # Ayni gorselin farkli boyutlarini engelle
-        # Base key: boyut bilgisi olmadan
+        # Prevent different sizes of the same image
+        # Base key: without size info
         base_key = re.sub(r'_?\d{3,4}-\d{3,4}', '', src)
         if base_key in seen:
             continue
@@ -176,14 +176,14 @@ def scrape_campaign_images(url, max_images=3):
 
 
 def download_image(url):
-    """Gorsel indir, bytes dondur."""
+    """Download image, return bytes."""
     resp = requests.get(url, timeout=60)
     resp.raise_for_status()
     return resp.content
 
 
 def upload_to_fal(image_bytes):
-    """Gorsel bytes'ini fal.ai'a yukle, public URL dondur."""
+    """Upload image bytes to fal.ai, return public URL."""
     with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
         tmp.write(image_bytes)
         tmp_path = tmp.name
@@ -193,7 +193,7 @@ def upload_to_fal(image_bytes):
 
 
 def extract_campaign_info(page_content):
-    """AI kullanarak sayfa iceriginden kampanya bilgilerini cikar."""
+    """Extract campaign info from page content using AI."""
     system_prompt = """Sen bir kampanya analiz asistanisin. Sana verilen web sayfasi iceriginden kampanya bilgilerini cikarmalsin.
 
 Yanitini SADECE asagidaki JSON formatinda ver, baska hicbir sey yazma:
@@ -206,7 +206,7 @@ Yanitini SADECE asagidaki JSON formatinda ver, baska hicbir sey yazma:
     result = fal_client.subscribe(
         "fal-ai/any-llm",
         arguments={
-            "model": "anthropic/claude-sonnet-4.5",
+            "model": "openai/gpt-4o",
             "prompt": f"Asagidaki kampanya sayfasinin icerigini analiz et ve kampanya bilgilerini JSON olarak cikar:\n\n{page_content}",
             "system_prompt": system_prompt,
         },
@@ -228,13 +228,19 @@ Yanitini SADECE asagidaki JSON formatinda ver, baska hicbir sey yazma:
     return json.loads(json_str)
 
 
+DEFAULT_NEGATIVE_PROMPT = (
+    "no illustration, no cartoon, no 3D render, no CGI, no anime, "
+    "no watermark, no text overlay, no logo, no blurry, no low quality"
+)
+
+
 def generate_content_ai(campaign):
-    """fal.ai workflow ile sifirdan gorsel + metin uret (fallback)."""
+    """Generate image + text from scratch via fal.ai workflow (fallback)."""
+    negative = campaign.get("negative_prompt", DEFAULT_NEGATIVE_PROMPT)
     image_prompt = (
         f"A real photograph taken with a DSLR camera of {campaign['category']}, "
         "natural lighting, shot on Canon EOS R5, 35mm lens, shallow depth of field, "
-        "raw unedited photo, no illustration, no cartoon, no 3D render, no CGI, "
-        "photojournalistic style, candid real moment"
+        f"raw unedited photo, photojournalistic style, candid real moment, {negative}"
     )
     system_prompt = (
         "Sen Grupanya sosyal medya yoneticisisin. "
@@ -259,11 +265,11 @@ def generate_content_ai(campaign):
     post_text = result.get("output", "")
 
     if not images:
-        raise RuntimeError(f"Workflow gorsel dondurmedi: {result}")
+        raise RuntimeError(f"Workflow returned no images: {result}")
 
     image_url = images[0].get("url") or images[0].get("image_url")
     if not image_url:
-        raise RuntimeError(f"Image URL bulunamadi: {images}")
+        raise RuntimeError(f"Image URL not found: {images}")
 
     if not post_text:
         post_text = result.get("text", "")
@@ -272,11 +278,11 @@ def generate_content_ai(campaign):
 
 
 def generate_post_text(campaign):
-    """AI ile sadece Instagram post metni uret."""
+    """Generate Instagram post text with AI."""
     result = fal_client.subscribe(
         "fal-ai/any-llm",
         arguments={
-            "model": "anthropic/claude-sonnet-4.5",
+            "model": "openai/gpt-4o",
             "prompt": (
                 f"{campaign['title']} kampanyasi: {campaign['discount']} indirim. "
                 "Instagram post metni yaz."
@@ -291,50 +297,56 @@ def generate_post_text(campaign):
 
 
 def run():
-    """Ana otomasyon akisi."""
-    # Gerekli env var kontrolu
+    """Main automation flow."""
+    # Check required env vars
     missing = []
     for var in ["FAL_KEY", "INSTAGRAM_ACCESS_TOKEN", "INSTAGRAM_ACCOUNT_ID"]:
         if not os.getenv(var):
             missing.append(var)
     if missing:
-        print(f"HATA: Eksik environment variable'lar: {', '.join(missing)}")
+        print(f"ERROR: Missing environment variables: {', '.join(missing)}")
         sys.exit(1)
 
-    # URL listesini yukle
+    # Load URL list
     urls = load_campaign_urls()
     if not urls:
-        print("HATA: campaigns.json bos veya bulunamadi.")
+        print("ERROR: campaigns.json is empty or not found.")
         sys.exit(1)
 
-    # URL sec
+    # Select URL
     url, index = pick_url(urls)
     now = datetime.now(TZ_TR).strftime("%Y-%m-%d %H:%M")
-    print(f"[{now}] Secilen URL ({index + 1}/{len(urls)}): {url}")
+    print(f"[{now}] Selected URL ({index + 1}/{len(urls)}): {url}")
 
-    # Sayfayi scrape et
-    print("Sayfa scrape ediliyor...")
+    # Scrape page
+    print("Scraping page...")
     page_content = scrape_campaign_page(url)
 
-    # AI ile kampanya bilgilerini cikar
-    print("Kampanya bilgileri cikariliyor...")
+    # Extract campaign info with AI
+    print("Extracting campaign info...")
     campaign = extract_campaign_info(page_content)
-    print(f"Kampanya: {campaign['title']} | {campaign['discount']}")
+    # Add negative_prompt from campaigns.json (if exists)
+    campaigns_data = load_campaigns_data()
+    if campaigns_data and isinstance(campaigns_data[0], dict):
+        matched = next((c for c in campaigns_data if c.get("url") == url), None)
+        if matched and matched.get("negative_prompt"):
+            campaign["negative_prompt"] = matched["negative_prompt"]
+    print(f"Campaign: {campaign['title']} | {campaign['discount']}")
 
-    # Sayfadaki gorselleri kontrol et
-    print("Kampanya gorselleri araniyor...")
+    # Check page images
+    print("Searching for campaign images...")
     image_urls = scrape_campaign_images(url)
 
     if image_urls:
-        # AFIS MODU: Sayfadaki gorselleri kullanarak poster olustur
-        print(f"{len(image_urls)} gorsel bulundu, afis modu...")
+        # POSTER MODE: Create poster using page images
+        print(f"{len(image_urls)} images found, poster mode...")
 
         image_data_list = []
         for img_url in image_urls:
-            print(f"  Indiriliyor: {img_url[:80]}...")
+            print(f"  Downloading: {img_url[:80]}...")
             image_data_list.append(download_image(img_url))
 
-        # Poster olustur
+        # Create poster
         if len(image_data_list) == 1:
             poster_bytes = create_poster(
                 image_data_list[0],
@@ -348,31 +360,31 @@ def run():
                 campaign["discount"],
             )
 
-        # fal.ai'a yukle (Instagram public URL istiyor)
-        print("Poster yukleniyor...")
+        # Upload to fal.ai (Instagram requires a public URL)
+        print("Uploading poster...")
         image_url = upload_to_fal(poster_bytes)
 
-        # Post metni uret
-        print("Post metni uretiliyor...")
+        # Generate post text
+        print("Generating post text...")
         post_text = generate_post_text(campaign)
     else:
-        # FALLBACK: AI ile sifirdan gorsel uret
-        print("Sayfada gorsel bulunamadi, AI ile uretiliyor...")
+        # FALLBACK: Generate image from scratch with AI
+        print("No images found on page, generating with AI...")
         content = generate_content_ai(campaign)
         image_url = content["image_url"]
         post_text = content["post_text"]
 
-    print(f"Gorsel URL: {image_url}")
-    print(f"Post metni: {post_text[:100]}...")
+    print(f"Image URL: {image_url}")
+    print(f"Post text: {post_text[:100]}...")
 
-    # Instagram'a paylas
-    print("Instagram'a paylasiliyor...")
+    # Post to Instagram
+    print("Posting to Instagram...")
     result = post_to_instagram(image_url, post_text)
 
     if result["success"]:
-        print(f"Basariyla paylasildi! Post ID: {result['post_id']}")
+        print(f"Successfully posted! Post ID: {result['post_id']}")
     else:
-        print(f"HATA: Instagram paylasim basarisiz: {result['error']}")
+        print(f"ERROR: Instagram posting failed: {result['error']}")
         sys.exit(1)
 
 

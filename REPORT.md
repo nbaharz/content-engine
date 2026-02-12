@@ -1,292 +1,314 @@
-# Grupanya Content Engine - Proje Raporu
+# Grupanya Content Engine - Project Report
 
-## Genel Bakış
-
-AI destekli sosyal medya içerik otomasyon aracı. Kampanya görsellerini oluşturur, profesyonel posterler üretir ve doğrudan Instagram'a yayınlar.
+## Overview
+AI-powered content generation tool. Use cases:
+  1) Campaign Visual Generation
+      - Campaign visuals are generated using campaign details and (optionally) reference images.
+  2) Instagram Post Automation
+      - Generates Instagram visuals and captions using campaign details. Posts directly to Instagram.
 
 ---
 
-## Dosya Yapısı ve Amaçları
+## File Structure and Purposes
 
 ```
 grupanya-content-engine/
-├── app.py                          # Flask web uygulaması - ana dashboard ve API endpoint'leri
-├── main.py                         # CLI arayüzü - test ve manuel içerik üretimi
-├── scheduler.py                    # GitHub Actions ile otomatik zamanlama motoru
-├── instagram.py                    # Instagram Graph API entegrasyonu
-├── poster.py                       # Pillow ile poster/görsel oluşturma
-├── collage.py                      # Çoklu görsel kolaj düzenleri
-├── requirements.txt                # Python bağımlılıkları
-├── campaigns.json                  # Kampanya verileri (gitignore)
-├── campaigns.example.json          # campaigns.json şablonu
-├── .env                            # API anahtarları (gitignore)
-├── .env.example                    # Environment variables şablonu
+├── app.py                          # Flask app creation, blueprint registration, index route
+├── routes/                         # Flask Blueprints (API endpoints)
+│   ├── campaigns.py                # Campaign CRUD: /add-campaign, /scrape-campaign, /update-campaign
+│   ├── generation.py               # AI generation: /generate, /generate-caption, /generate-website-content, /download
+│   ├── instagram.py                # Instagram posting: /post-instagram, /post-instagram-carousel
+│   └── media.py                    # Image processing: /upload-image, /upload-images, /create-collage, /create-posters, /adjust-poster
+├── services/                       # Business logic layer
+│   ├── campaigns.py                # Campaign CRUD operations (load/save), constants
+│   ├── scraper.py                  # Web scraping and AI info extraction
+│   └── content.py                  # AI content generation (image, caption, website)
+├── main.py                         # CLI interface - testing and manual content generation
+├── scheduler.py                    # Automated scheduling engine via GitHub Actions
+├── instagram.py                    # Instagram Graph API integration
+├── poster.py                       # Poster/image creation with Pillow
+├── collage.py                      # Multi-image collage layouts
+├── requirements.txt                # Python dependencies
+├── campaigns.json                  # Campaign data (gitignored)
+├── campaigns.example.json          # campaigns.json template
+├── .env                            # API keys (gitignored)
+├── .env.example                    # Environment variables template
 ├── static/
 │   └── css/
-│       └── style.css               # UI stilleri (açık/koyu tema)
+│       └── style.css               # UI styles (light/dark theme)
 ├── templates/
-│   └── index.html                  # Flask web arayüzü (responsive, interaktif)
+│   └── index.html                  # Flask web interface (responsive, interactive)
 └── .github/
     └── workflows/
-        └── schedule.yml            # GitHub Actions otomasyon (günde 3 kez)
+        └── schedule.yml            # GitHub Actions automation (3 times daily)
 ```
 
 ---
 
-## Kullanılan Teknolojiler
+## Technologies Used
 
-| Katman | Teknoloji | Neden Kullanıldı |
-|--------|-----------|------------------|
-| **Web Framework** | Flask | Hafif, hızlı dashboard ve API sunumu |
-| **AI Görsel Üretimi** | fal.ai (Flux) | Kampanya görseli oluşturma ve img2img stilizasyon |
-| **LLM** | Claude Sonnet 4.5 (fal.ai üzerinden) | Kampanya bilgisi çıkarma, caption yazma, stil prompt'u üretme |
-| **Görüntü İşleme** | Pillow | Poster oluşturma, metin yerleştirme, kolaj düzeni |
-| **Web Scraping** | BeautifulSoup4 | Kampanya sayfalarından bilgi ve görsel çekme |
-| **HTTP** | requests | API çağrıları ve görsel indirme |
-| **Sosyal Medya** | Instagram Graph API v19.0 | Tek/carousel post yayınlama |
-| **Otomasyon** | GitHub Actions (cron) | Hafta içi günde 3 kez otomatik paylaşım |
-| **Frontend** | HTML5 + CSS3 + Vanilla JS | Tab-based UI, drag-drop, gerçek zamanlı önizleme |
-| **İkonlar** | Lucide (CDN) | Modern UI ikonları |
-| **Fontlar** | Google Fonts (Inter), Arial Unicode/DejaVu | Türkçe karakter desteği |
+| Layer | Technology | Reason |
+|-------|-----------|--------|
+| **Web Framework** | Flask | Lightweight, fast dashboard and API serving |
+| **AI Image Generation** | fal.ai (Flux) | Campaign image creation and img2img stylization |
+| **LLM** | Openai/gpt-4o (via fal.ai) | Campaign info extraction, caption writing, style prompt generation |
+| **Image Processing** | Pillow | Poster creation, text placement, collage layout |
+| **Web Scraping** | BeautifulSoup4 | Extracting info and images from campaign pages |
+| **HTTP** | requests | API calls and image downloading |
+| **Social Media** | Instagram Graph API v19.0 | Single/carousel post publishing |
+| **Automation** | GitHub Actions (cron) | Automated posting 3 times daily on weekdays |
+| **Frontend** | HTML5 + CSS3 + Vanilla JS | Tab-based UI, drag-drop, real-time preview |
+| **Icons** | Lucide (CDN) | Modern UI icons |
+| **Fonts** | Google Fonts (Inter), Arial Unicode/DejaVu | Turkish character support |
 
 ---
 
-## Ana İş Akışları
+## Main Workflows
 
-### 1. Web UI ile Manuel İçerik Üretimi
+### 1. Campaign Visual Generation
 
 ```
-Kampanya URL'si ekle → AI bilgi çıkarır → Görsel yükle/üret → Poster oluştur → Instagram'a paylaş
+Select campaign → (Optional) Upload reference image → Generate image with AI → Download
 ```
 
-- Kullanıcı kampanya URL'sini girer
-- Claude Sonnet 4.5 sayfayı analiz edip başlık, kategori ve indirim bilgisi çıkarır
-- Kullanıcı görsel yükler veya AI ile üretir
-- Poster/kolaj oluşturulur, metin pozisyonu ayarlanır
-- Tek görsel veya carousel olarak Instagram'a paylaşılır
+- AI generates visuals using campaign details
+- Optionally, reference images can be uploaded (1-4 images)
+- With reference images: Collage → Flux img2img stylization
+- Without reference images: AI generates image from scratch using campaign info
+- Generated image can be previewed and downloaded
 
-### 2. Otomatik Zamanlayıcı (GitHub Actions)
-
-```
-Cron tetikler (09:00, 11:20, 18:00 TR) → Kampanya seç → Sayfayı tara → Görsel bul/üret → Poster yap → Caption yaz → Instagram'a paylaş
-```
-
-- GitHub Actions hafta içi günde 3 kez tetiklenir
-- Deterministik algoritma ile o slot için kampanya seçilir
-- Sayfa scrape edilir, görseller ve bilgiler çekilir
-- Görsel varsa poster, yoksa AI ile görsel üretilir
-- Claude ile caption yazılır ve otomatik paylaşılır
-
-### 3. AI Poster Üretimi (Gelişmiş)
+### 2. Instagram Post Automation
 
 ```
-Görselleri yükle → Kolaj oluştur → fal.ai'ye gönder → Flux img2img stilize et → Metin ve badge ekle → Paylaş
+Select campaign → Upload/generate image → Create caption → Post to Instagram
 ```
 
-- Birden fazla görsel yüklenir
-- Ham kolaj oluşturulur (metin olmadan)
-- fal.ai'ye yüklenir, Claude stil prompt'u üretir
-- Flux img2img ile stilize edilir
-- Kampanya metni ve indirim badge'i eklenir
+- Generates Instagram visuals and captions using campaign details
+- Two sub-modes: Manual image upload (collage/carousel) or AI generation
+- Caption is generated by AI or written manually
+- Post is published directly to Instagram (single image or carousel)
+
+### 3. Automated Scheduler (GitHub Actions)
+
+```
+Cron triggers (09:00, 11:20, 18:00 TR) → Select campaign → Scrape page → Find/generate image → Write caption → Post to Instagram
+```
+
+- GitHub Actions triggers 3 times daily on weekdays
+- Deterministic algorithm selects a campaign for each slot
+- Page is scraped, images and info are extracted
+- If images exist, create poster; otherwise generate image with AI
+- Caption is written by GPT and posted automatically
 
 ---
 
-## Temel Modüller
+## Core Modules
 
-### app.py - Flask Web Uygulaması
+### app.py - Flask Application Entry Point
 
-Ana dashboard ve tüm API endpoint'lerini barındırır.
+Blueprint registrations and index route. All endpoints are separated into modules under `routes/`.
 
-**Endpoint'ler:**
+### routes/ - API Endpoints (Flask Blueprints)
 
-| Route | Metod | Açıklama |
-|-------|-------|----------|
-| `/` | GET | Ana dashboard, kampanya listesi |
-| `/add-campaign` | POST | URL ile kampanya ekleme (AI bilgi çıkarır) |
-| `/scrape-campaign` | POST | Kampanya URL'sini yeniden tarıma |
-| `/update-campaign` | POST | Kampanya başlık/kategori/indirim düzenleme |
-| `/generate` | POST | AI ile içerik üretimi (görsel + caption) |
-| `/generate-caption` | POST | Claude ile Instagram caption üretimi |
-| `/create-posters` | POST | Yüklenen görsellerden poster oluşturma |
-| `/adjust-poster` | POST | Poster üzerinde metin pozisyonu ayarlama |
-| `/create-collage` | POST | Çoklu görsel kolaj düzeni oluşturma |
-| `/upload-image` | POST | Tek görsel yükleme (fal.ai) |
-| `/upload-images` | POST | Çoklu görsel yükleme (fal.ai) |
-| `/post-instagram` | POST | Tek görsel Instagram paylaşımı |
-| `/post-instagram-carousel` | POST | Carousel Instagram paylaşımı |
-| `/download/<campaign_id>` | GET | Üretilen içeriği indirme |
+| Module | Routes | Description |
+|--------|--------|-------------|
+| **campaigns.py** | `/add-campaign`, `/scrape-campaign`, `/update-campaign` | Campaign CRUD operations |
+| **generation.py** | `/generate`, `/generate-caption`, `/generate-website-content`, `/download/<id>` | AI content generation |
+| **instagram.py** | `/post-instagram`, `/post-instagram-carousel` | Instagram posting |
+| **media.py** | `/upload-image`, `/upload-images`, `/create-collage`, `/create-posters`, `/adjust-poster` | Image upload and processing |
 
-**Temel Fonksiyonlar:**
+**All Endpoints:**
 
-- `scrape_campaign_page()` - BeautifulSoup ile web scraping
-- `extract_campaign_info()` - Claude Sonnet 4.5 ile kampanya bilgisi çıkarma
-- `generate_campaign_content()` - fal.ai workflow ile görsel + caption üretimi
-- `generate_ai_poster()` - Kolaj → Flux stilizasyon → metin overlay
+| Route | Method | Blueprint | Description |
+|-------|--------|-----------|-------------|
+| `/` | GET | app | Main dashboard, campaign list |
+| `/add-campaign` | POST | campaigns | Add campaign by URL (AI extracts info) |
+| `/scrape-campaign` | POST | campaigns | Re-scrape campaign URL |
+| `/update-campaign` | POST | campaigns | Edit campaign title/category/discount |
+| `/generate` | POST | generation | Generate content with AI (image + caption) |
+| `/generate-caption` | POST | generation | Generate Instagram caption with AI |
+| `/generate-website-content` | POST | generation | Generate campaign image for website |
+| `/download/<campaign_id>` | GET | generation | Download generated content |
+| `/create-posters` | POST | media | Create poster from uploaded images |
+| `/adjust-poster` | POST | media | Adjust text position on poster |
+| `/create-collage` | POST | media | Create multi-image collage layout |
+| `/upload-image` | POST | media | Upload single image (fal.ai) |
+| `/upload-images` | POST | media | Upload multiple images (fal.ai) |
+| `/post-instagram` | POST | instagram | Single image Instagram post |
+| `/post-instagram-carousel` | POST | instagram | Carousel Instagram post |
 
----
+### services/ - Business Logic Layer
 
-### poster.py - Poster Oluşturma Motoru
-
-Pillow tabanlı poster oluşturma sistemi.
-
-**Fonksiyonlar:**
-
-- `create_poster()` - Tek görsel + metin overlay
-  - Gradient arka plan overlay (alt kısım daha koyu)
-  - Otomatik metin sarma ve gölge efekti
-  - İndirim badge'i (kırmızı yuvarlak dikdörtgen)
-  - Ayarlanabilir metin pozisyonu (%0-%90 dikey)
-
-- `create_poster_from_multiple()` - Çoklu görsel düzeni
-  - %62 görsel alanı, %38 bilgi alanı
-  - 1, 2, 3, 4+ görsel için farklı layout'lar
-  - Gradient geçiş ve aksanlı çizgi ayracı
-
-- `create_raw_collage()` - Çoklu görsel grid (metin olmadan)
-  - AI stilizasyon öncesi ham kolaj
-  - Crop-to-fill mantığı (boş alan yok)
-
-**Çıktı:** 1080x1350px (Instagram 4:5), JPEG kalite 95
+| Module | Functions | Description |
+|--------|-----------|-------------|
+| **campaigns.py** | `load_campaigns()`, `save_campaigns()` | Campaign data read/write, `DEFAULT_NEGATIVE_PROMPT` constant |
+| **scraper.py** | `scrape_campaign_page()`, `extract_campaign_info()` | Scraping with BeautifulSoup, info extraction with GPT-4o-mini |
+| **content.py** | `generate_instagram_content()`, `generate_caption()`, `generate_website_content()` | Image + caption generation via fal.ai workflow, img2img stylization |
 
 ---
 
-### collage.py - Kolaj Düzen Motoru
+### poster.py - Poster Creation Engine
 
-Çoklu görsel düzenleme sistemi.
+Pillow-based poster creation system.
 
-**Düzenler:**
+**Functions:**
 
-- `create_full_bleed_grid()` - Eşit boyutlu grid, minimal boşluk (0-5px)
-- `create_feature_layout()` - 1 büyük + küçük görseller
-  - 2 görsel: 2/3 sol büyük, 1/3 sağ küçük
-  - 3 görsel: %50/%50 bölünmüş
-  - 4 görsel: Sol büyük, sağ 3 üst üste
-  - 5+ görsel: Sol %55, sağ grid
+- `create_poster()` - Single image + text overlay
+  - Gradient background overlay (darker at the bottom)
+  - Automatic text wrapping and shadow effect
+  - Discount badge (red rounded rectangle)
+  - Adjustable text position (0%-90% vertical)
 
----
+- `create_poster_from_multiple()` - Multi-image layout
+  - 62% image area, 38% info area
+  - Different layouts for 1, 2, 3, 4+ images
+  - Gradient transition and accent line separator
 
-### scheduler.py - Zamanlama Motoru
+- `create_raw_collage()` - Multi-image grid (no text)
+  - Raw collage before AI stylization
+  - Crop-to-fill logic (no empty space)
 
-GitHub Actions ile otomatik içerik üretimi ve paylaşımı.
-
-**Özellikler:**
-
-- Türkiye saatine duyarlı zamanlama (UTC+3)
-- Deterministik kampanya seçimi (her slot farklı kampanya)
-- Cascading fallback: yerel dosya → GitHub Gist → environment variable
-- Görsel tekilleştirme ve filtreleme
-- Hafta içi 3 zaman dilimi: 09:00, 11:20, 18:00
+**Output:** 1080x1350px (Instagram 4:5), JPEG quality 95
 
 ---
 
-### instagram.py - Instagram Entegrasyonu
+### collage.py - Collage Layout Engine
 
-Facebook Graph API v19.0 üzerinden Instagram paylaşımı.
+Multi-image arrangement system.
 
-**Fonksiyonlar:**
+**Layouts:**
 
-- `post_to_instagram()` - Tek görsel paylaşımı
-  1. Media container oluştur (görsel URL + caption)
-  2. İşlem bekle (10s)
-  3. Yayınla
-
-- `post_carousel_to_instagram()` - Carousel paylaşımı (2-10 görsel)
-  1. Her görsel için child container oluştur
-  2. Parent carousel container oluştur
-  3. Yayınla
+- `create_full_bleed_grid()` - Equal-sized grid, minimal spacing (0-5px)
+- `create_feature_layout()` - 1 large + smaller images
+  - 2 images: 2/3 left large, 1/3 right small
+  - 3 images: 50%/50% split
+  - 4 images: Left large, right 3 stacked
+  - 5+ images: Left 55%, right grid
 
 ---
 
-### index.html - Web Arayüzü
+### scheduler.py - Scheduling Engine
 
-Modern, responsive tek sayfa uygulama.
+Automated content generation and posting via GitHub Actions.
 
-- **Navigasyon:** Marka, durum göstergesi, tema değiştirici
-- **Kampanya Yönetimi:** URL ile ekleme, dropdown seçici, düzenlenebilir alanlar
-- **İki Ana Sekme:** Instagram Post Üretimi / Kampanya Görsel Üretimi
-- **Alt Modlar:** Manuel yükleme, AI üretim, kolaj seçici, metin pozisyon slider
-- **Yükleme:** Çoklu dosya drag-drop, görsel önizleme grid
-- **Koyu Mod:** localStorage ile kalıcı tema tercihi
+**Features:**
 
----
-
-### style.css - Stil Sistemi
-
-- CSS değişkenleri ile açık/koyu tema
-- Bileşen kütüphanesi: butonlar, kartlar, inputlar, alertler, tablar
-- Flexbox tabanlı düzen, 1080px max genişlik
-- Animasyonlar: geçişler, yükleme spinner'ları, hover efektleri
-- Inter fontu (Google Fonts)
-- Mobile-first responsive tasarım
+- Turkey timezone-aware scheduling (UTC+3)
+- Deterministic campaign selection (different campaign per slot)
+- Cascading fallback: local file → GitHub Gist → environment variable
+- Image deduplication and filtering
+- 3 time slots on weekdays: 09:00, 11:20, 18:00
 
 ---
 
-## Konfigürasyon
+### instagram.py - Instagram Integration
+
+Instagram posting via Facebook Graph API v19.0.
+
+**Functions:**
+
+- `post_to_instagram()` - Single image posting
+  1. Create media container (image URL + caption)
+  2. Wait for processing (10s)
+  3. Publish
+
+- `post_carousel_to_instagram()` - Carousel posting (2-10 images)
+  1. Create child container for each image
+  2. Create parent carousel container
+  3. Publish
+
+---
+
+### index.html - Web Interface
+
+Modern, responsive single page application.
+
+- **Navigation:** Brand, status indicator, theme switcher
+- **Campaign Management:** Add by URL, dropdown selector, editable fields
+- **Two Main Tabs:** Instagram Post Generation / Campaign Visual Generation
+- **Sub-modes:** Manual upload, AI generation, collage selector, text position slider
+- **Upload:** Multi-file drag-drop, image preview grid
+- **Dark Mode:** Persistent theme preference via localStorage
+
+---
+
+### style.css - Style System
+
+- CSS variables for light/dark theme
+- Component library: buttons, cards, inputs, alerts, tabs
+- Flexbox-based layout, 1080px max width
+- Animations: transitions, loading spinners, hover effects
+- Inter font (Google Fonts)
+- Mobile-first responsive design
+
+---
+
+## Configuration
 
 ### Environment Variables (.env)
 
-| Değişken | Açıklama |
-|----------|----------|
-| `FAL_KEY` | fal.ai API anahtarı |
-| `INSTAGRAM_ACCESS_TOKEN` | 60 günlük Instagram token |
-| `INSTAGRAM_ACCOUNT_ID` | Instagram business hesap ID |
-| `CAMPAIGNS_GIST_URL` | (Opsiyonel) GitHub Gist URL'si |
+| Variable | Description |
+|----------|-------------|
+| `FAL_KEY` | fal.ai API key |
+| `INSTAGRAM_ACCESS_TOKEN` | 60-day Instagram token |
+| `INSTAGRAM_ACCOUNT_ID` | Instagram business account ID |
+| `CAMPAIGNS_GIST_URL` | (Optional) GitHub Gist URL |
 
 ### GitHub Actions Secrets
 
-| Secret | Açıklama |
-|--------|----------|
-| `FAL_KEY` | fal.ai API anahtarı |
+| Secret | Description |
+|--------|-------------|
+| `FAL_KEY` | fal.ai API key |
 | `INSTAGRAM_ACCESS_TOKEN` | Instagram token |
-| `INSTAGRAM_ACCOUNT_ID` | Instagram hesap ID |
-| `CAMPAIGNS_GIST_URL` | (Opsiyonel) Gist URL |
+| `INSTAGRAM_ACCOUNT_ID` | Instagram account ID |
+| `CAMPAIGNS_GIST_URL` | (Optional) Gist URL |
 
-### Zamanlama (schedule.yml)
+### Scheduling (schedule.yml)
 
-- **Sıklık:** Hafta içi günde 3 kez
-- **Saatler (TR):** 09:00, 11:20, 18:00
+- **Frequency:** 3 times daily on weekdays
+- **Hours (TR):** 09:00, 11:20, 18:00
 - **Platform:** Ubuntu-latest, Python 3.11
-- **Fontlar:** DejaVu (Ubuntu sistem fontları)
+- **Fonts:** DejaVu (Ubuntu system fonts)
 
 ---
 
-## Veri Modelleri
+## Data Models
 
-### Kampanya Objesi
+### Campaign Object
 
 ```json
 {
   "id": 1,
   "url": "https://...",
-  "title": "Kampanya Başlığı",
-  "category": "Görsel üretimi için kategori açıklaması",
-  "discount": "İndirim tutarı/yüzdesi"
+  "title": "Campaign Title",
+  "category": "Category description for image generation",
+  "discount": "Discount amount/percentage"
 }
 ```
 
-### fal.ai Workflow Endpoint'leri
+### fal.ai Workflow Endpoints
 
-| Endpoint | Kullanım |
-|----------|----------|
-| `workflows/baharyavuz/grupanya-content-engine` | Ana içerik üretimi |
-| `workflows/baharyavuz/grupanya-content-caption` | Sadece caption üretimi |
-| `fal-ai/any-llm` | Claude Sonnet 4.5 metin üretimi |
-| `fal-ai/flux/dev/image-to-image` | Görsel stilizasyonu |
-
----
-
-## Mimari Öne Çıkanlar
-
-- **Modüler yapı:** Scraping, AI, görüntü işleme, sosyal medya birbirinden bağımsız modüller
-- **Cross-platform:** macOS (geliştirme) + Linux (GitHub Actions production)
-- **Sıfır dokunuş otomasyonu:** Akıllı kampanya rotasyonu ile günlük paylaşım
-- **Cascading fallback:** Kampanya verisi için 3 katmanlı yedekleme sistemi
-- **Responsive UI:** Dark mode, drag-drop, gerçek zamanlı önizleme
-- **Genişletilebilir:** Yeni layout, AI model veya sosyal platform kolayca eklenebilir
+| Endpoint | Usage |
+|----------|-------|
+| `workflows/baharyavuz/grupanya-content-engine` | Main content generation |
+| `workflows/baharyavuz/grupanya-content-caption` | Caption-only generation |
+| `fal-ai/any-llm` | Openai/gpt-4o text generation |
+| `fal-ai/flux/dev/image-to-image` | Image stylization |
 
 ---
 
-## Bağımlılıklar (requirements.txt)
+## Architecture Highlights
+
+- **Modular structure:** Route separation via Flask Blueprints, business logic isolation via services layer
+- **Cross-platform:** macOS (development) + Linux (GitHub Actions production)
+- **Zero-touch automation:** Daily posting with smart campaign rotation
+- **Cascading fallback:** 3-tier backup system for campaign data
+- **Responsive UI:** Dark mode, drag-drop, real-time preview
+- **Extensible:** New layouts, AI models, or social platforms can be easily added
+
+---
+
+## Dependencies (requirements.txt)
 
 ```
 flask>=3.0.0

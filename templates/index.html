@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -31,8 +31,8 @@
             </div>
             <div class="topbar-meta">
                 <span class="status-dot"></span>
-                <span>Aktif</span>
-                <button class="theme-toggle" id="themeToggle" title="Tema degistir">
+                <span>Active</span>
+                <button class="theme-toggle" id="themeToggle" title="Toggle theme">
                     <i data-lucide="moon" class="icon-moon"></i>
                     <i data-lucide="sun" class="icon-sun"></i>
                 </button>
@@ -43,22 +43,22 @@
     <!-- MAIN CONTENT -->
     <main class="main-content">
         <div class="page-header">
-            <h1>Kampanyalar</h1>
-            <p>AI ile kampanya icerigi olusturun ve Instagram'a paylasin.</p>
+            <h1>Campaigns</h1>
+            <p>Generate campaign visuals with AI or automate Instagram posting.</p>
         </div>
 
-        <!-- KAMPANYA URL ILE EKLE -->
+        <!-- ADD CAMPAIGN BY URL -->
         <div class="card">
             <h2>
                 <span class="section-icon"><i data-lucide="link" style="width:16px;height:16px;"></i></span>
-                Kampanya URL'si ile Ekle
+                Add Campaign by URL
             </h2>
             <div class="url-input-group">
-                <input type="url" id="campaignUrl" class="url-input" placeholder="Kampanya URL'sini yapistirin (orn: https://www.grupanya.com/...)">
+                <input type="url" id="campaignUrl" class="url-input" placeholder="Paste campaign URL (e.g. https://www.grupanya.com/...)">
                 <button id="addCampaignBtn" class="btn btn-primary btn-add">
-                    <span class="btn-text"><i data-lucide="plus-circle" style="width:16px;height:16px;"></i> Kampanya Ekle</span>
+                    <span class="btn-text"><i data-lucide="plus-circle" style="width:16px;height:16px;"></i> Add Campaign</span>
                     <span class="btn-loader" style="display: none;">
-                        <span class="spinner"></span> Analiz ediliyor...
+                        <span class="spinner"></span> Analyzing...
                     </span>
                 </button>
             </div>
@@ -72,23 +72,24 @@
             </div>
         </div>
 
-        <!-- KAMPANYA SEC + MODLAR -->
+        <!-- SELECT CAMPAIGN + MODES -->
         <div class="card">
             <h2>
                 <span class="section-icon"><i data-lucide="megaphone" style="width:16px;height:16px;"></i></span>
-                Kampanya Secin
+                Select Campaign
             </h2>
             <div class="campaign-selector">
                 <select id="campaignSelect" class="campaign-dropdown">
-                    <option value="">Bir kampanya secin...</option>
+                    <option value="">Select a campaign...</option>
                     {% for campaign in campaigns %}
                     <option value="{{ campaign.id }}"
                             data-title="{{ campaign.title }}"
                             data-category="{{ campaign.category }}"
                             data-discount="{{ campaign.discount }}"
+                            data-negative-prompt="{{ campaign.negative_prompt | default('', true) }}"
                             data-url="{{ campaign.url }}">
                         {% if campaign.title %}
-                            {{ campaign.title }} - {{ campaign.discount }} indirim
+                            {{ campaign.title }} - {{ campaign.discount }} discount
                         {% else %}
                             {{ campaign.url | truncate(60) }}
                         {% endif %}
@@ -99,238 +100,256 @@
 
             <div id="campaignInfo" class="campaign-info" style="display: none;">
                 <div class="info-item">
-                    <span class="info-label">Kampanya</span>
+                    <span class="info-label">Campaign</span>
                     <input type="text" id="infoTitle" class="info-edit-input">
                 </div>
                 <div class="info-item">
-                    <span class="info-label">Kategori</span>
+                    <span class="info-label">Category</span>
                     <input type="text" id="infoCategory" class="info-edit-input">
                 </div>
                 <div class="info-item">
-                    <span class="info-label">Indirim</span>
+                    <span class="info-label">Discount</span>
                     <input type="text" id="infoDiscount" class="info-edit-input info-edit-discount">
                 </div>
+                <div class="info-item">
+                    <span class="info-label">Negative Prompt</span>
+                    <input type="text" id="infoNegativePrompt" class="info-edit-input" placeholder="no illustration, no cartoon, no 3D render...">
+                </div>
                 <button id="saveEditBtn" class="btn btn-success btn-save">
-                    <i data-lucide="save" style="width:14px;height:14px;"></i> Kaydet
+                    <i data-lucide="save" style="width:14px;height:14px;"></i> Save
                 </button>
             </div>
 
-            <!-- ANA AKIS TABLARI -->
+            <!-- MAIN FLOW TABS -->
             <div id="primaryTabContainer" class="primary-tabs" style="display: none;">
-                <button id="tabInstagramFlow" class="primary-tab active" data-tab="instagram">
-                    <i data-lucide="instagram" style="width:16px;height:16px;"></i>
-                    Instagram Postu Üret
-                </button>
-                <button id="tabCampaignVisual" class="primary-tab" data-tab="campaign-visual">
+                <button id="tabCampaignVisual" class="primary-tab active" data-tab="campaign-visual">
                     <i data-lucide="images" style="width:16px;height:16px;"></i>
-                    Kampanya Görseli Üret
+                    Generate Campaign Visual
+                </button>
+                <button id="tabInstagramFlow" class="primary-tab" data-tab="instagram">
+                    <i data-lucide="instagram" style="width:16px;height:16px;"></i>
+                    Instagram Post Automation
                 </button>
             </div>
 
-            <!-- ========== PANEL 1: INSTAGRAM POSTU URET ========== -->
+            <!-- ========== PANEL 2: INSTAGRAM POST AUTOMATION ========== -->
             <div id="panelInstagramFlow" class="tab-panel" style="display: none;">
-                <!-- ALT TAB BUTONLARI -->
+                <!-- SUB TAB BUTTONS -->
                 <div id="modeTabContainer" class="mode-tabs" style="display: none;">
                     <button id="tabManual" class="mode-tab active" data-tab="manual">
                         <i data-lucide="upload" style="width:16px;height:16px;"></i>
-                        Manuel Gorsel Yukle
+                        Upload Images Manually
                     </button>
                     <button id="tabAI" class="mode-tab" data-tab="ai">
                         <i data-lucide="sparkles" style="width:16px;height:16px;"></i>
-                        AI ile Uret
+                        Generate with AI
                     </button>
                 </div>
 
-                <!-- ========== PANEL A: MANUEL GORSEL YUKLE ========== -->
+                <!-- ========== PANEL A: MANUAL IMAGE UPLOAD ========== -->
                 <div id="panelManual" class="tab-panel" style="display: none;">
 
-                <!-- Gorsel Yukleme -->
+                <!-- Image Upload -->
                 <div class="multi-upload-area">
                     <input type="file" id="manualImageFiles" accept="image/*" multiple style="display: none;">
                     <button id="selectManualFilesBtn" class="btn btn-secondary">
-                        <i data-lucide="image-plus" style="width:16px;height:16px;"></i> Gorsel Sec
+                        <i data-lucide="image-plus" style="width:16px;height:16px;"></i> Select Images
                     </button>
                     <div id="manualFilesPreview" class="files-preview"></div>
                 </div>
 
-                <!-- Post Tipi: Kolaj / Carousel -->
+                <!-- Post Type: Collage / Carousel -->
                 <div class="post-type-selector">
-                    <label>Post Tipi</label>
+                    <label>Post Type</label>
                     <div class="radio-group">
                         <label class="radio-label">
                             <input type="radio" name="manualPostType" value="collage" checked>
-                            <span>Kolaj (Tek Gorsel)</span>
+                            <span>Collage (Single Image)</span>
                         </label>
                         <label class="radio-label">
                             <input type="radio" name="manualPostType" value="carousel">
-                            <span>Carousel (Kaydirmali)</span>
+                            <span>Carousel (Swipeable)</span>
                         </label>
                     </div>
                 </div>
 
-                <!-- Kolaj Stili (kolaj seciliyse gorunur) -->
+                <!-- Collage Style (visible when collage is selected) -->
                 <div id="manualLayoutSelector" class="post-type-selector">
-                    <label>Kolaj Stili</label>
+                    <label>Collage Style</label>
                     <div class="radio-group">
                         <label class="radio-label">
                             <input type="radio" name="manualCollageLayout" value="feature" checked>
-                            <span>Feature (1 Buyuk + Kucukler)</span>
+                            <span>Feature (1 Large + Smaller)</span>
                         </label>
                         <label class="radio-label">
                             <input type="radio" name="manualCollageLayout" value="full_bleed">
-                            <span>Grid (Esit Boyut)</span>
+                            <span>Grid (Equal Size)</span>
                         </label>
                     </div>
                 </div>
 
-                <!-- Afis Modu Toggle -->
+                <!-- Poster Mode Toggle -->
                 <div class="poster-toggle">
                     <label class="toggle-label">
                         <input type="checkbox" id="manualPosterMode">
                         <span class="toggle-switch"></span>
-                        <span class="toggle-text">Afis Modu (gorselin uzerine kampanya bilgilerini yaz)</span>
+                        <span class="toggle-text">Poster Mode (overlay campaign info on the image)</span>
                     </label>
                 </div>
 
-                <!-- Onizle Butonu -->
+                <!-- Preview Button -->
                 <button id="manualPreviewBtn" class="btn btn-primary btn-block" disabled>
-                    <span class="btn-text"><i data-lucide="eye" style="width:16px;height:16px;"></i> Onizle</span>
+                    <span class="btn-text"><i data-lucide="eye" style="width:16px;height:16px;"></i> Preview</span>
                     <span class="btn-loader" style="display: none;">
-                        <span class="spinner"></span> Olusturuluyor...
+                        <span class="spinner"></span> Creating...
                     </span>
                 </button>
 
-                <!-- Onizleme Alani -->
+                <!-- Preview Area -->
                 <div id="manualPreview" style="display: none; margin-top: 1.5rem;">
-                    <h3>Onizleme</h3>
+                    <h3>Preview</h3>
                     <div class="image-container">
-                        <img id="manualPreviewImage" src="" alt="Onizleme">
+                        <img id="manualPreviewImage" src="" alt="Preview">
                     </div>
 
-                    <!-- Poster Ayar (afis modunda gorunur) -->
+                    <!-- Poster Adjuster (visible in poster mode) -->
                     <div id="manualPosterAdjuster" class="position-adjuster" style="display: none;">
-                        <label>Afis Duzenle</label>
+                        <label>Edit Poster</label>
                         <div class="edit-field">
-                            <span class="edit-label">Baslik</span>
-                            <input type="text" id="manualPosterTitle" class="edit-input" placeholder="Kampanya basligi">
+                            <span class="edit-label">Title</span>
+                            <input type="text" id="manualPosterTitle" class="edit-input" placeholder="Campaign title">
                         </div>
                         <div class="edit-field">
-                            <span class="edit-label">Indirim</span>
-                            <input type="text" id="manualPosterDiscount" class="edit-input edit-input-short" placeholder="Indirim bilgisi">
+                            <span class="edit-label">Discount</span>
+                            <input type="text" id="manualPosterDiscount" class="edit-input edit-input-short" placeholder="Discount info">
                         </div>
                         <div class="edit-field">
-                            <span class="edit-label">Konum</span>
+                            <span class="edit-label">Position</span>
                             <div class="slider-row">
-                                <span class="slider-label">Yukari</span>
+                                <span class="slider-label">Up</span>
                                 <input type="range" id="manualPositionSlider" min="20" max="85" value="65" class="position-slider">
-                                <span class="slider-label">Asagi</span>
+                                <span class="slider-label">Down</span>
                             </div>
                         </div>
                         <button id="manualApplyPositionBtn" class="btn btn-secondary btn-sm">
-                            <span class="btn-text"><i data-lucide="refresh-cw" style="width:14px;height:14px;"></i> Uygula</span>
+                            <span class="btn-text"><i data-lucide="refresh-cw" style="width:14px;height:14px;"></i> Apply</span>
                             <span class="btn-loader" style="display: none;">
-                                <span class="spinner"></span> Render...
+                                <span class="spinner"></span> Rendering...
                             </span>
                         </button>
                     </div>
                 </div>
 
-                <!-- AI Caption Uret -->
+                <!-- AI Caption Generation -->
                 <div style="margin-top: 1.5rem;">
                     <button id="generateCaptionBtn" class="btn btn-primary btn-block" disabled>
-                        <span class="btn-text"><i data-lucide="message-square" style="width:16px;height:16px;"></i> AI Caption Uret</span>
+                        <span class="btn-text"><i data-lucide="message-square" style="width:16px;height:16px;"></i> Generate AI Caption</span>
                         <span class="btn-loader" style="display: none;">
-                            <span class="spinner"></span> Caption uretiliyor...
+                            <span class="spinner"></span> Generating caption...
                         </span>
                     </button>
                     <div class="text-container" style="margin-top: 1rem;">
-                        <textarea id="manualCaption" rows="4" placeholder="Caption buraya gelecek... (AI ile uretebilir veya kendiniz yazabilirsiniz)"></textarea>
+                        <textarea id="manualCaption" rows="4" placeholder="Caption will appear here... (generate with AI or write your own)"></textarea>
                     </div>
                 </div>
 
-                <!-- Instagram Paylas -->
+                <!-- Post to Instagram -->
                 <div class="action-buttons multi-actions" style="margin-top: 0.75rem;">
                     <button id="manualInstagramBtn" class="btn btn-instagram" disabled>
-                        <i data-lucide="send" style="width:16px;height:16px;"></i> Instagram'a Paylas
+                        <i data-lucide="send" style="width:16px;height:16px;"></i> Post to Instagram
                     </button>
                 </div>
                 </div>
 
-                <!-- ========== PANEL B: AI ILE POST URET ========== -->
+                <!-- ========== PANEL B: GENERATE POST WITH AI ========== -->
                 <div id="panelAI" class="tab-panel" style="display: none;">
 
-                <!-- Poster Modu Toggle -->
+                <!-- Poster Mode Toggle -->
                 <div class="poster-toggle">
                     <label class="toggle-label">
                         <input type="checkbox" id="aiPosterMode">
                         <span class="toggle-switch"></span>
-                        <span class="toggle-text">Afis Modu (gorselin uzerine kampanya bilgilerini yaz)</span>
+                        <span class="toggle-text">Poster Mode (overlay campaign info on the image)</span>
                     </label>
                 </div>
 
-                <!-- Icerik Olustur Butonu -->
+                <!-- Generate Content Button -->
                 <button id="generateBtn" class="btn btn-primary btn-block">
-                    <span class="btn-text"><i data-lucide="wand-2" style="width:16px;height:16px;"></i> Icerik Olustur</span>
+                    <span class="btn-text"><i data-lucide="wand-2" style="width:16px;height:16px;"></i> Generate Content</span>
                     <span class="btn-loader" style="display: none;">
-                        <span class="spinner"></span> Olusturuluyor...
+                        <span class="spinner"></span> Generating...
                     </span>
                 </button>
 
-                <!-- AI Sonuc Alani -->
+                <!-- AI Result Area -->
                 <div id="aiResultSection" style="display: none; margin-top: 1.5rem;">
-                    <h3>Gorsel</h3>
+                    <h3>Image</h3>
                     <div class="image-container">
-                        <img id="aiGeneratedImage" src="" alt="Kampanya Gorseli">
+                        <img id="aiGeneratedImage" src="" alt="Campaign Image">
                     </div>
 
                     <div class="text-container" style="margin-top: 1.5rem;">
-                        <h3>Instagram Post Metni</h3>
-                        <textarea id="aiGeneratedText" rows="6" placeholder="Caption buraya gelecek..."></textarea>
+                        <h3>Instagram Post Text</h3>
+                        <textarea id="aiGeneratedText" rows="6" placeholder="Caption will appear here..."></textarea>
                     </div>
 
                     <div class="action-buttons">
                         <button id="aiCopyTextBtn" class="btn btn-secondary">
-                            <i data-lucide="copy" style="width:16px;height:16px;"></i> Metni Kopyala
+                            <i data-lucide="copy" style="width:16px;height:16px;"></i> Copy Text
                         </button>
                         <button id="aiDownloadBtn" class="btn btn-success">
-                            <i data-lucide="download" style="width:16px;height:16px;"></i> Desktop'a Kaydet
+                            <i data-lucide="download" style="width:16px;height:16px;"></i> Save to Desktop
                         </button>
                         <button id="aiInstagramBtn" class="btn btn-instagram">
-                            <i data-lucide="send" style="width:16px;height:16px;"></i> Instagram'a Paylas
+                            <i data-lucide="send" style="width:16px;height:16px;"></i> Post to Instagram
                         </button>
                     </div>
                 </div>
             </div>
+            </div>
 
-            <!-- ========== PANEL 2: KAMPANYA GORSELI COGALT ========== -->
+            <!-- ========== PANEL 1: GENERATE CAMPAIGN VISUAL ========== -->
             <div id="panelCampaignVisual" class="tab-panel" style="display: none;">
-                <p class="section-desc">Kampanya gorsellerini yukleyin, AI ile afis formatinda cogaltin.</p>
+                <p class="section-desc">Generate visuals using campaign details with AI. Optionally upload reference images.</p>
 
-                <div class="multi-upload-area">
-                    <input type="file" id="visualMultiplyFiles" accept="image/*" multiple style="display: none;">
-                    <button id="selectVisualMultiplyFilesBtn" class="btn btn-secondary">
-                        <i data-lucide="image-plus" style="width:16px;height:16px;"></i> Gorsel Sec
-                    </button>
-                    <div id="visualMultiplyFilesPreview" class="files-preview"></div>
+                <div class="post-type-selector">
+                    <label for="visualNumImages">Number of Images to Generate</label>
+                    <select id="visualNumImages" class="campaign-dropdown">
+                        <option value="1" selected>1 Image</option>
+                        <option value="2">2 Images</option>
+                        <option value="3">3 Images</option>
+                        <option value="4">4 Images</option>
+                    </select>
                 </div>
 
-                <button id="visualMultiplyBtn" class="btn btn-primary btn-block" disabled>
-                    <span class="btn-text"><i data-lucide="wand-2" style="width:16px;height:16px;"></i> Kampanya Gorseli Cogalt</span>
+                <div class="multi-upload-area">
+                    <input type="file" id="visualRefFiles" accept="image/*" multiple style="display: none;">
+                    <button id="selectVisualRefFilesBtn" class="btn btn-secondary">
+                        <i data-lucide="image-plus" style="width:16px;height:16px;"></i> Select Reference Images (Optional)
+                    </button>
+                    <div id="visualRefFilesPreview" class="files-preview"></div>
+                </div>
+
+                <button id="visualGenerateBtn" class="btn btn-primary btn-block">
+                    <span class="btn-text"><i data-lucide="wand-2" style="width:16px;height:16px;"></i> Generate Image</span>
                     <span class="btn-loader" style="display: none;">
-                        <span class="spinner"></span> Olusturuluyor...
+                        <span class="spinner"></span> Generating...
                     </span>
                 </button>
 
-                <div id="visualMultiplyResult" style="display: none; margin-top: 1.5rem;">
-                    <h3>Cogaltilan Gorsel</h3>
-                    <div class="image-container">
-                        <img id="visualMultiplyImage" src="" alt="Cogaltilan Kampanya Gorseli">
+                <div id="visualGenerateResult" style="display: none; margin-top: 1.5rem;">
+                    <h3>Generated Images</h3>
+                    <div id="visualGenerateImages"></div>
+                    <div class="action-buttons" style="margin-top: 1rem;">
+                        <button id="visualDownloadBtn" class="btn btn-success">
+                            <i data-lucide="download" style="width:16px;height:16px;"></i> Download Images
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- HATA MESAJI -->
+        <!-- ERROR MESSAGE -->
         <div id="errorAlert" class="alert alert-error" style="display: none;">
             <span class="alert-icon"><i data-lucide="alert-triangle" style="width:16px;height:16px;"></i></span>
             <span id="errorMessage"></span>
@@ -364,7 +383,7 @@
         const modeTabContainer = document.getElementById('modeTabContainer');
         const primaryTabContainer = document.getElementById('primaryTabContainer');
 
-        // ========== KAMPANYA URL'DEN EKLEME ==========
+        // ========== ADD CAMPAIGN BY URL ==========
         const addCampaignBtn = document.getElementById('addCampaignBtn');
         const campaignUrlInput = document.getElementById('campaignUrl');
         const addCampaignError = document.getElementById('addCampaignError');
@@ -374,7 +393,7 @@
             const url = campaignUrlInput.value.trim();
             if (!url) {
                 addCampaignError.style.display = 'flex';
-                document.getElementById('addCampaignErrorMsg').textContent = 'Lutfen bir URL girin';
+                document.getElementById('addCampaignErrorMsg').textContent = 'Please enter a URL';
                 return;
             }
 
@@ -391,7 +410,7 @@
                     body: JSON.stringify({ url: url })
                 });
                 const data = await response.json();
-                if (!response.ok) throw new Error(data.error || 'Bir hata olustu');
+                if (!response.ok) throw new Error(data.error || 'An error occurred');
 
                 const campaign = data.campaign;
                 const option = document.createElement('option');
@@ -399,8 +418,9 @@
                 option.dataset.title = campaign.title;
                 option.dataset.category = campaign.category;
                 option.dataset.discount = campaign.discount;
+                option.dataset.negativePrompt = campaign.negative_prompt || '';
                 option.dataset.url = url;
-                option.textContent = `${campaign.title} - ${campaign.discount} indirim`;
+                option.textContent = `${campaign.title} - ${campaign.discount} discount`;
                 campaignSelect.appendChild(option);
 
                 campaignSelect.value = campaign.id;
@@ -408,7 +428,7 @@
 
                 addCampaignSuccess.style.display = 'flex';
                 document.getElementById('addCampaignSuccessMsg').textContent =
-                    `"${campaign.title}" kampanyasi eklendi!`;
+                    `Campaign "${campaign.title}" added!`;
                 campaignUrlInput.value = '';
 
             } catch (error) {
@@ -425,7 +445,7 @@
             if (e.key === 'Enter') addCampaignBtn.click();
         });
 
-        // ========== KAMPANYA SECIMI ==========
+        // ========== CAMPAIGN SELECTION ==========
         campaignSelect.addEventListener('change', async function() {
             const selectedOption = this.options[this.selectedIndex];
             if (this.value) {
@@ -433,7 +453,7 @@
                 primaryTabContainer.style.display = 'flex';
                 modeTabContainer.style.display = 'flex';
 
-                // Alanlar bossa otomatik scrape et
+                // Auto-scrape if fields are empty
                 if (!selectedOption.dataset.title) {
                     generateBtn.disabled = true;
                     document.getElementById('generateCaptionBtn').disabled = true;
@@ -443,7 +463,7 @@
 
                     const saveBtn = document.getElementById('saveEditBtn');
                     const origSaveText = saveBtn.textContent;
-                    saveBtn.textContent = 'Analiz ediliyor...';
+                    saveBtn.textContent = 'Analyzing...';
                     saveBtn.disabled = true;
 
                     try {
@@ -459,16 +479,18 @@
                         selectedOption.dataset.title = c.title;
                         selectedOption.dataset.category = c.category;
                         selectedOption.dataset.discount = c.discount;
-                        selectedOption.textContent = `${c.title} - ${c.discount} indirim`;
+                        selectedOption.dataset.negativePrompt = c.negative_prompt || '';
+                        selectedOption.textContent = `${c.title} - ${c.discount} discount`;
 
                         document.getElementById('infoTitle').value = c.title;
                         document.getElementById('infoCategory').value = c.category;
                         document.getElementById('infoDiscount').value = c.discount;
+                        document.getElementById('infoNegativePrompt').value = c.negative_prompt || '';
                         generateBtn.disabled = false;
                         document.getElementById('generateCaptionBtn').disabled = false;
                     } catch (err) {
                         errorAlert.style.display = 'flex';
-                        document.getElementById('errorMessage').textContent = 'Scrape hatasi: ' + err.message;
+                        document.getElementById('errorMessage').textContent = 'Scrape error: ' + err.message;
                     } finally {
                         saveBtn.textContent = origSaveText;
                         saveBtn.disabled = false;
@@ -477,16 +499,14 @@
                     document.getElementById('infoTitle').value = selectedOption.dataset.title;
                     document.getElementById('infoCategory').value = selectedOption.dataset.category;
                     document.getElementById('infoDiscount').value = selectedOption.dataset.discount;
+                    document.getElementById('infoNegativePrompt').value = selectedOption.dataset.negativePrompt || '';
                     generateBtn.disabled = false;
                     document.getElementById('generateCaptionBtn').disabled = false;
                 }
-                document.getElementById('visualMultiplyBtn').disabled =
-                    document.getElementById('visualMultiplyFiles').files.length === 0;
-
-                // Ilk ana tab'i aktive et
+                // Activate the first main tab
                 if (document.getElementById('panelInstagramFlow').style.display === 'none' &&
                     document.getElementById('panelCampaignVisual').style.display === 'none') {
-                    switchPrimaryTab('instagram');
+                    switchPrimaryTab('campaign-visual');
                 }
             } else {
                 campaignInfo.style.display = 'none';
@@ -498,16 +518,15 @@
                 document.getElementById('panelAI').style.display = 'none';
                 generateBtn.disabled = true;
                 document.getElementById('generateCaptionBtn').disabled = true;
-                document.getElementById('visualMultiplyBtn').disabled = true;
             }
 
             document.getElementById('aiResultSection').style.display = 'none';
             document.getElementById('manualPreview').style.display = 'none';
-            document.getElementById('visualMultiplyResult').style.display = 'none';
+            document.getElementById('visualGenerateResult').style.display = 'none';
             errorAlert.style.display = 'none';
         });
 
-        // Kampanya bilgilerini kaydet
+        // Save campaign info
         document.getElementById('saveEditBtn').addEventListener('click', async function() {
             const campaignId = campaignSelect.value;
             if (!campaignId) return;
@@ -515,9 +534,10 @@
             const newTitle = document.getElementById('infoTitle').value.trim();
             const newCategory = document.getElementById('infoCategory').value.trim();
             const newDiscount = document.getElementById('infoDiscount').value.trim();
+            const newNegativePrompt = document.getElementById('infoNegativePrompt').value.trim();
 
             if (!newTitle || !newCategory || !newDiscount) {
-                alert('Tum alanlari doldurun');
+                alert('Please fill in all fields');
                 return;
             }
 
@@ -529,7 +549,8 @@
                         campaign_id: parseInt(campaignId),
                         title: newTitle,
                         category: newCategory,
-                        discount: newDiscount
+                        discount: newDiscount,
+                        negative_prompt: newNegativePrompt
                     })
                 });
                 const data = await response.json();
@@ -539,18 +560,19 @@
                 selectedOption.dataset.title = newTitle;
                 selectedOption.dataset.category = newCategory;
                 selectedOption.dataset.discount = newDiscount;
-                selectedOption.textContent = `${newTitle} - ${newDiscount} indirim`;
+                selectedOption.dataset.negativePrompt = newNegativePrompt;
+                selectedOption.textContent = `${newTitle} - ${newDiscount} discount`;
 
                 const originalText = this.textContent;
-                this.textContent = 'Kaydedildi!';
+                this.textContent = 'Saved!';
                 this.classList.add('btn-success-flash');
                 setTimeout(() => { this.textContent = originalText; this.classList.remove('btn-success-flash'); }, 2000);
             } catch (error) {
-                alert('Hata: ' + error.message);
+                alert('Error: ' + error.message);
             }
         });
 
-        // ========== ANA TAB SWITCHING ==========
+        // ========== MAIN TAB SWITCHING ==========
         const tabInstagramFlow = document.getElementById('tabInstagramFlow');
         const tabCampaignVisual = document.getElementById('tabCampaignVisual');
         const panelInstagramFlow = document.getElementById('panelInstagramFlow');
@@ -577,7 +599,7 @@
         tabInstagramFlow.addEventListener('click', () => switchPrimaryTab('instagram'));
         tabCampaignVisual.addEventListener('click', () => switchPrimaryTab('campaign-visual'));
 
-        // ========== ALT TAB SWITCHING ==========
+        // ========== SUB TAB SWITCHING ==========
         const tabManual = document.getElementById('tabManual');
         const tabAI = document.getElementById('tabAI');
         const panelManual = document.getElementById('panelManual');
@@ -593,18 +615,21 @@
         tabManual.addEventListener('click', () => switchTab('manual'));
         tabAI.addEventListener('click', () => switchTab('ai'));
 
-        // ========== KAMPANYA GORSELI COGALT ==========
-        const visualMultiplyFilesInput = document.getElementById('visualMultiplyFiles');
-        const selectVisualMultiplyFilesBtn = document.getElementById('selectVisualMultiplyFilesBtn');
-        const visualMultiplyFilesPreview = document.getElementById('visualMultiplyFilesPreview');
-        const visualMultiplyBtn = document.getElementById('visualMultiplyBtn');
+        // ========== GENERATE CAMPAIGN VISUAL ==========
+        const visualRefFilesInput = document.getElementById('visualRefFiles');
+        const selectVisualRefFilesBtn = document.getElementById('selectVisualRefFilesBtn');
+        const visualRefFilesPreview = document.getElementById('visualRefFilesPreview');
+        const visualGenerateBtn = document.getElementById('visualGenerateBtn');
+        const visualNumImagesInput = document.getElementById('visualNumImages');
+        let visualGeneratedBase64List = [];
 
-        selectVisualMultiplyFilesBtn.addEventListener('click', () => visualMultiplyFilesInput.click());
+        selectVisualRefFilesBtn.addEventListener('click', () => visualRefFilesInput.click());
 
-        visualMultiplyFilesInput.addEventListener('change', function() {
+        visualRefFilesInput.addEventListener('change', function() {
             const files = Array.from(this.files).slice(0, 4);
-            visualMultiplyFilesPreview.innerHTML = '';
-            document.getElementById('visualMultiplyResult').style.display = 'none';
+            visualRefFilesPreview.innerHTML = '';
+            document.getElementById('visualGenerateResult').style.display = 'none';
+            visualGeneratedBase64List = [];
 
             files.forEach((file, idx) => {
                 const reader = new FileReader();
@@ -612,53 +637,73 @@
                     const div = document.createElement('div');
                     div.className = 'preview-item';
                     div.innerHTML = `
-                        <img src="${e.target.result}" alt="Visual Preview ${idx + 1}">
+                        <img src="${e.target.result}" alt="Reference ${idx + 1}">
                         <span class="preview-number">${idx + 1}</span>
                     `;
-                    visualMultiplyFilesPreview.appendChild(div);
+                    visualRefFilesPreview.appendChild(div);
                 };
                 reader.readAsDataURL(file);
             });
-
-            visualMultiplyBtn.disabled = files.length === 0 || !campaignSelect.value;
         });
 
-        visualMultiplyBtn.addEventListener('click', async function() {
+        visualGenerateBtn.addEventListener('click', async function() {
             const campaignId = campaignSelect.value;
             if (!campaignId) {
-                alert('Once kampanya secin');
-                return;
-            }
-
-            const files = Array.from(visualMultiplyFilesInput.files).slice(0, 4);
-            if (!files.length) {
-                alert('Lutfen en az 1 gorsel secin');
+                alert('Please select a campaign first');
                 return;
             }
 
             this.disabled = true;
             this.querySelector('.btn-text').style.display = 'none';
             this.querySelector('.btn-loader').style.display = 'inline-flex';
+            document.getElementById('visualGenerateResult').style.display = 'none';
+            errorAlert.style.display = 'none';
 
             try {
+                const refFiles = Array.from(visualRefFilesInput.files).slice(0, 4);
+                const numImages = parseInt(visualNumImagesInput.value, 10) || 1;
                 const formData = new FormData();
-                files.forEach(file => formData.append('files', file));
                 formData.append('campaign_id', campaignId);
-                formData.append('ai_mode', 'true');
+                formData.append('num_images', String(numImages));
+                refFiles.forEach(file => formData.append('files', file));
 
-                const response = await fetch('/create-posters', {
+                const response = await fetch('/generate-website-content', {
                     method: 'POST',
                     body: formData
                 });
                 const data = await response.json();
-                if (!response.ok) throw new Error(data.error || 'Bir hata olustu');
+                if (!response.ok) throw new Error(data.error || 'An error occurred');
 
-                document.getElementById('visualMultiplyImage').src =
-                    'data:image/jpeg;base64,' + data.poster.image_base64;
-                document.getElementById('visualMultiplyResult').style.display = 'block';
-                document.getElementById('visualMultiplyResult').scrollIntoView({ behavior: 'smooth' });
+                if (!data.images || !data.images.length || !data.images[0].image_base64) {
+                    throw new Error('No generated image found');
+                }
+
+                visualGeneratedBase64List = data.images
+                    .map(item => item.image_base64)
+                    .filter(Boolean);
+
+                if (!visualGeneratedBase64List.length) {
+                    throw new Error('Failed to retrieve generated images');
+                }
+
+                const imagesWrap = document.getElementById('visualGenerateImages');
+                imagesWrap.innerHTML = '';
+
+                visualGeneratedBase64List.forEach((imageBase64, idx) => {
+                    const card = document.createElement('div');
+                    card.className = 'image-container';
+                    card.style.marginBottom = '1rem';
+                    card.innerHTML = `
+                        <img src="data:image/jpeg;base64,${imageBase64}" alt="Generated Campaign Image ${idx + 1}">
+                    `;
+                    imagesWrap.appendChild(card);
+                });
+
+                document.getElementById('visualGenerateResult').style.display = 'block';
+                document.getElementById('visualGenerateResult').scrollIntoView({ behavior: 'smooth' });
             } catch (error) {
-                alert('Hata: ' + error.message);
+                errorAlert.style.display = 'flex';
+                document.getElementById('errorMessage').textContent = error.message;
             } finally {
                 this.disabled = false;
                 this.querySelector('.btn-text').style.display = 'inline';
@@ -666,7 +711,23 @@
             }
         });
 
-        // ========== MANUEL GORSEL YUKLE TAB ==========
+        // Download images (client-side)
+        document.getElementById('visualDownloadBtn').addEventListener('click', function() {
+            if (!visualGeneratedBase64List.length) return;
+            const title = document.getElementById('infoTitle').value || 'campaign';
+            const safeTitle = title.replace(/\s+/g, '_');
+
+            visualGeneratedBase64List.forEach((imageBase64, idx) => {
+                const link = document.createElement('a');
+                link.href = 'data:image/jpeg;base64,' + imageBase64;
+                link.download = `${safeTitle}_image_${idx + 1}.jpg`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+        });
+
+        // ========== MANUAL IMAGE UPLOAD TAB ==========
         let manualUploadedUrls = [];
         let manualCollageUrl = null;
         let manualPosterUrl = null;
@@ -679,7 +740,7 @@
         const manualInstagramBtn = document.getElementById('manualInstagramBtn');
         const generateCaptionBtn = document.getElementById('generateCaptionBtn');
 
-        // Dosya secme
+        // File selection
         selectManualFilesBtn.addEventListener('click', () => manualFileInput.click());
 
         manualFileInput.addEventListener('change', function() {
@@ -712,12 +773,12 @@
             manualPreviewBtn.disabled = files.length === 0;
         });
 
-        // Post tipi degisince
+        // Post type change handler
         document.querySelectorAll('input[name="manualPostType"]').forEach(radio => {
             radio.addEventListener('change', function() {
                 const isCollage = this.value === 'collage';
                 document.getElementById('manualLayoutSelector').style.display = isCollage ? 'block' : 'none';
-                // Dosya secimini sifirla
+                // Reset file selection
                 manualFileInput.value = '';
                 manualFilesPreview.innerHTML = '';
                 manualUploadedUrls = [];
@@ -729,7 +790,7 @@
             });
         });
 
-        // AI Caption uret
+        // Generate AI caption
         generateCaptionBtn.addEventListener('click', async function() {
             const campaignId = campaignSelect.value;
             if (!campaignId) return;
@@ -749,7 +810,7 @@
 
                 document.getElementById('manualCaption').value = data.caption;
             } catch (error) {
-                alert('Caption uretme hatasi: ' + error.message);
+                alert('Caption generation error: ' + error.message);
             } finally {
                 this.disabled = false;
                 this.querySelector('.btn-text').style.display = 'inline';
@@ -757,10 +818,10 @@
             }
         });
 
-        // Onizle butonu
+        // Preview button
         manualPreviewBtn.addEventListener('click', async function() {
             const campaignId = campaignSelect.value;
-            if (!campaignId) { alert('Once kampanya secin'); return; }
+            if (!campaignId) { alert('Please select a campaign first'); return; }
 
             const files = Array.from(manualFileInput.files);
             const postType = document.querySelector('input[name="manualPostType"]:checked').value;
@@ -810,7 +871,7 @@
                         document.getElementById('manualPosterAdjuster').style.display = 'none';
                     }
                 } else {
-                    // Carousel: gorselleri yukle
+                    // Carousel: upload images
                     const formData = new FormData();
                     slicedFiles.forEach(file => formData.append('files', file));
 
@@ -820,7 +881,7 @@
 
                     manualUploadedUrls = data.urls;
 
-                    // Ilk gorseli onizleme olarak goster
+                    // Show first image as preview
                     if (slicedFiles.length > 0) {
                         const reader = new FileReader();
                         reader.onload = (e) => {
@@ -836,7 +897,7 @@
                 document.getElementById('manualPreview').scrollIntoView({ behavior: 'smooth' });
 
             } catch (error) {
-                alert('Hata: ' + error.message);
+                alert('Error: ' + error.message);
             } finally {
                 this.disabled = false;
                 this.querySelector('.btn-text').style.display = 'inline';
@@ -844,15 +905,15 @@
             }
         });
 
-        // Poster konum ayarla
+        // Adjust poster position
         document.getElementById('manualApplyPositionBtn').addEventListener('click', async function() {
-            if (!manualRawBase64) { alert('Once onizleme yapin'); return; }
+            if (!manualRawBase64) { alert('Please preview first'); return; }
             const campaignId = campaignSelect.value;
             if (!campaignId) return;
 
             const customTitle = document.getElementById('manualPosterTitle').value.trim();
             const customDiscount = document.getElementById('manualPosterDiscount').value.trim();
-            if (!customTitle || !customDiscount) { alert('Baslik ve indirim alanlari bos olamaz'); return; }
+            if (!customTitle || !customDiscount) { alert('Title and discount fields cannot be empty'); return; }
 
             this.disabled = true;
             this.querySelector('.btn-text').style.display = 'none';
@@ -878,7 +939,7 @@
                 document.getElementById('manualPreviewImage').src =
                     'data:image/jpeg;base64,' + data.poster.image_base64;
             } catch (error) {
-                alert('Hata: ' + error.message);
+                alert('Error: ' + error.message);
             } finally {
                 this.disabled = false;
                 this.querySelector('.btn-text').style.display = 'inline';
@@ -886,18 +947,18 @@
             }
         });
 
-        // Manuel Instagram paylas
+        // Manual Instagram post
         manualInstagramBtn.addEventListener('click', async function() {
             const caption = document.getElementById('manualCaption').value.trim();
-            if (!caption) { alert('Lutfen caption yazin veya AI ile uretin!'); return; }
+            if (!caption) { alert('Please write a caption or generate one with AI!'); return; }
 
             const postType = document.querySelector('input[name="manualPostType"]:checked').value;
 
-            if (!confirm('Instagram\'a paylasmak istiyor musunuz?')) return;
+            if (!confirm('Do you want to post to Instagram?')) return;
 
             const originalText = this.textContent;
             this.disabled = true;
-            this.textContent = 'Paylasiliyor...';
+            this.textContent = 'Posting...';
 
             try {
                 let response;
@@ -909,7 +970,7 @@
                     });
                 } else {
                     const imageUrl = manualPosterUrl || manualCollageUrl;
-                    if (!imageUrl) throw new Error('Once onizleme yapin');
+                    if (!imageUrl) throw new Error('Please preview first');
                     response = await fetch('/post-instagram', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -920,18 +981,18 @@
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.error);
 
-                this.textContent = 'Paylasildi!';
+                this.textContent = 'Posted!';
                 alert(data.message + '\nPost ID: ' + data.post_id);
                 setTimeout(() => { this.textContent = originalText; this.disabled = false; }, 3000);
 
             } catch (error) {
-                alert('Hata: ' + error.message);
+                alert('Error: ' + error.message);
                 this.textContent = originalText;
                 this.disabled = false;
             }
         });
 
-        // ========== AI ILE POST URET TAB ==========
+        // ========== AI POST GENERATION TAB ==========
         let currentAiImageUrl = null;
 
         generateBtn.addEventListener('click', async function() {
@@ -954,7 +1015,7 @@
                     })
                 });
                 const data = await response.json();
-                if (!response.ok) throw new Error(data.error || 'Bir hata olustu');
+                if (!response.ok) throw new Error(data.error || 'An error occurred');
 
                 document.getElementById('aiGeneratedImage').src =
                     'data:image/jpeg;base64,' + data.image_base64;
@@ -973,51 +1034,51 @@
             }
         });
 
-        // Metni kopyala
+        // Copy text
         document.getElementById('aiCopyTextBtn').addEventListener('click', function() {
             const text = document.getElementById('aiGeneratedText').value;
             navigator.clipboard.writeText(text).then(() => {
                 const originalText = this.textContent;
-                this.textContent = 'Kopyalandi!';
+                this.textContent = 'Copied!';
                 this.classList.add('btn-success-flash');
                 setTimeout(() => { this.textContent = originalText; this.classList.remove('btn-success-flash'); }, 2000);
             });
         });
 
-        // Desktop'a kaydet
+        // Save to desktop
         document.getElementById('aiDownloadBtn').addEventListener('click', async function() {
             const campaignId = campaignSelect.value;
             const originalText = this.textContent;
             this.disabled = true;
-            this.textContent = 'Kaydediliyor...';
+            this.textContent = 'Saving...';
 
             try {
                 const response = await fetch(`/download/${campaignId}`);
                 const data = await response.json();
-                if (!response.ok) throw new Error(data.error || 'Kayit basarisiz');
+                if (!response.ok) throw new Error(data.error || 'Save failed');
 
-                this.textContent = 'Kaydedildi!';
+                this.textContent = 'Saved!';
                 alert(data.message);
                 setTimeout(() => { this.textContent = originalText; this.disabled = false; }, 2000);
             } catch (error) {
-                alert('Hata: ' + error.message);
+                alert('Error: ' + error.message);
                 this.textContent = originalText;
                 this.disabled = false;
             }
         });
 
-        // AI Instagram paylas
+        // AI Instagram post
         document.getElementById('aiInstagramBtn').addEventListener('click', async function() {
             const caption = document.getElementById('aiGeneratedText').value.trim();
             if (!currentAiImageUrl || !caption) {
-                alert('Once icerik olusturmalisiniz!');
+                alert('Please generate content first!');
                 return;
             }
-            if (!confirm('Instagram\'a paylasmak istiyor musunuz?')) return;
+            if (!confirm('Do you want to post to Instagram?')) return;
 
             const originalText = this.textContent;
             this.disabled = true;
-            this.textContent = 'Paylasiliyor...';
+            this.textContent = 'Posting...';
 
             try {
                 const response = await fetch('/post-instagram', {
@@ -1026,13 +1087,13 @@
                     body: JSON.stringify({ image_url: currentAiImageUrl, caption: caption })
                 });
                 const data = await response.json();
-                if (!response.ok) throw new Error(data.error || 'Paylasim basarisiz');
+                if (!response.ok) throw new Error(data.error || 'Posting failed');
 
-                this.textContent = 'Paylasildi!';
+                this.textContent = 'Posted!';
                 alert(data.message + '\nPost ID: ' + data.post_id);
                 setTimeout(() => { this.textContent = originalText; this.disabled = false; }, 3000);
             } catch (error) {
-                alert('Hata: ' + error.message);
+                alert('Error: ' + error.message);
                 this.textContent = originalText;
                 this.disabled = false;
             }
